@@ -1,4 +1,8 @@
 const ROUTE_NAV_BLUR_KEY = 'route-nav-blur'
+const ROUTE_BLUR_DISABLED_KEY = 'watershop-disable-route-blur'
+
+const isRouteBlurDisabled = () =>
+  typeof localStorage !== 'undefined' && localStorage.getItem(ROUTE_BLUR_DISABLED_KEY) === '1'
 
 export default defineNuxtPlugin(() => {
   const loading = useState(ROUTE_NAV_BLUR_KEY, () => false)
@@ -33,6 +37,8 @@ export default defineNuxtPlugin(() => {
 
   router.beforeEach((to, from) => {
     if (to.fullPath === from.fullPath) return
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    if (isRouteBlurDisabled()) return
     activeNavigation += 1
     overlayStartedAt.set(activeNavigation, performance.now())
     loading.value = true
@@ -41,7 +47,6 @@ export default defineNuxtPlugin(() => {
       loading.value = false
       safetyTimer = undefined
     }, 8000)
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
   })
 
   router.afterEach((to, from) => {
@@ -51,6 +56,7 @@ export default defineNuxtPlugin(() => {
       return
     }
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    if (isRouteBlurDisabled()) return
     const snapshot = activeNavigation
     void finishOverlay(snapshot)
   })
