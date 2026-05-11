@@ -15,6 +15,7 @@
         <slot />
       </div>
     </div>
+    <UserFinanceChatDock />
   </div>
 </template>
 

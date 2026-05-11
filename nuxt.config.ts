@@ -15,7 +15,7 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#f1f5f9' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
-        { name: 'apple-mobile-web-app-title', content: 'Anything' },
+        { name: 'apple-mobile-web-app-title', content: 'LunarWater' },
         { name: 'mobile-web-app-capable', content: 'yes' },
       ],
       link: [
