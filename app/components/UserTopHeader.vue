@@ -1,6 +1,6 @@
 <template>
   <div
-    class="px-3 py-4 mt-2 transition-all duration-300 ease-out"
+    class="px-3 py-2 pt-4 transition-all duration-300 ease-out"
     :class="headerShellClass"
   >
     <div class="flex items-center gap-3">
@@ -80,8 +80,7 @@ const props = withDefaults(
 const router = useRouter();
 const { user } = useAuth();
 const { totalCount: cartCount } = useLocalWatershop();
-const DEFAULT_AVATAR =
-  "https://api.dicebear.com/9.x/initials/svg?seed=Water%20User";
+const DEFAULT_AVATAR = "/default-avatar.png";
 const HEADER_FLOAT_SCROLL_THRESHOLD = 64;
 const hasScrolled = ref(false);
 

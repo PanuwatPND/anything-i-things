@@ -105,7 +105,7 @@ type ReceiptItem = {
 }
 
 const RECEIPTS_STORAGE_KEY = 'watershop-receipts'
-const DEFAULT_AVATAR = 'https://api.dicebear.com/9.x/initials/svg?seed=Water%20User'
+const DEFAULT_AVATAR = '/default-avatar.png'
 
 const router = useRouter()
 const { user, logout, updateProfile } = useAuth()
