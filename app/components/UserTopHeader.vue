@@ -14,7 +14,7 @@
         @click="goProfile"
       >
         <img
-          src="https://api.dicebear.com/9.x/initials/svg?seed=Water%20User"
+          :src="avatarSrc"
           alt="profile"
           class="h-full w-full object-cover"
         />
@@ -76,6 +76,7 @@ withDefaults(
 const router = useRouter();
 const { user } = useAuth();
 const { totalCount: cartCount } = useLocalWatershop();
+const DEFAULT_AVATAR = "https://api.dicebear.com/9.x/initials/svg?seed=Water%20User";
 
 const todayLabel = computed(() => {
   try {
@@ -90,6 +91,9 @@ const todayLabel = computed(() => {
 });
 
 const displayName = computed(() => {
+  const profileName = user.value?.name?.trim() ?? "";
+  if (profileName) return profileName;
+
   const email = user.value?.email ?? "";
   const local = email.split("@")[0] ?? "";
   if (!local) return "ผู้ใช้";
@@ -100,6 +104,8 @@ const displayName = computed(() => {
     .map((part) => (part ? part[0]!.toUpperCase() + part.slice(1) : part))
     .join(" ");
 });
+
+const avatarSrc = computed(() => user.value?.avatar?.trim() || DEFAULT_AVATAR);
 
 const goProfile = () => {
   router.push("/user/profile");
