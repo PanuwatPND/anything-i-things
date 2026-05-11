@@ -6,6 +6,13 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
   app: {
     head: {
+      meta: [
+        {
+          name: 'viewport',
+          content:
+            'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover',
+        },
+      ],
       link: [
         { rel: 'icon', type: 'image/png', href: '/app-icon.png' },
         { rel: 'apple-touch-icon', href: '/app-icon.png' },

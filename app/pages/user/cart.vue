@@ -1,20 +1,30 @@
 <template>
   <div class="min-h-screen bg-[#ececec] px-4 pb-32 pt-8 text-slate-900">
     <div class="mx-auto w-full max-w-md space-y-4">
-      <div class="rounded-3xl bg-white p-5 shadow-[0_18px_36px_rgba(0,0,0,0.12)]">
+      <div
+        class="rounded-3xl bg-white p-5 shadow-[0_18px_36px_rgba(0,0,0,0.12)]"
+      >
         <div class="flex items-center justify-between">
           <div>
             <p class="text-xs text-slate-500">Cart</p>
             <h1 class="text-xl font-bold">ตะกร้าของฉัน</h1>
           </div>
-          <button class="rounded-xl border border-black px-3 py-1.5 text-sm hover:bg-black hover:text-white" @click="goHome">
+          <button
+            class="rounded-xl border border-black px-3 py-1.5 text-sm hover:bg-black hover:text-white"
+            @click="goHome"
+          >
             กลับ
           </button>
         </div>
       </div>
 
-      <div class="rounded-3xl bg-white p-4 shadow-[0_14px_30px_rgba(0,0,0,0.12)]">
-        <div v-if="cartItems.length === 0" class="rounded-2xl bg-slate-50 px-3 py-6 text-center text-sm text-slate-500">
+      <div
+        class="rounded-3xl bg-white p-4 shadow-[0_14px_30px_rgba(0,0,0,0.12)]"
+      >
+        <div
+          v-if="cartItems.length === 0"
+          class="rounded-2xl bg-slate-50 px-3 py-6 text-center text-sm text-slate-500"
+        >
           ยังไม่มีสินค้าในตะกร้า
         </div>
         <div v-else class="space-y-2">
@@ -23,7 +33,9 @@
             :key="item.id"
             class="flex items-center gap-3 rounded-2xl border border-black/10 bg-slate-50 p-3"
           >
-            <div class="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-white ring-1 ring-black/5">
+            <div
+              class="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-white ring-1 ring-black/5"
+            >
               <img
                 :src="imageOf(item.id)"
                 :alt="item.name"
@@ -45,7 +57,10 @@
                 class="no-spin w-14 rounded-lg border border-slate-300 bg-white px-2 py-1 text-center text-sm"
                 @change="onQtyChange(item.id, $event)"
               />
-              <button class="rounded-lg border border-black/20 px-2 py-1 text-xs hover:bg-black hover:text-white" @click="removeItem(item.id)">
+              <button
+                class="rounded-lg border border-black/20 px-2 py-1 text-xs hover:bg-black hover:text-white"
+                @click="removeItem(item.id)"
+              >
                 ลบ
               </button>
             </div>
@@ -53,7 +68,9 @@
         </div>
       </div>
 
-      <div class="rounded-3xl bg-white p-4 shadow-[0_14px_30px_rgba(0,0,0,0.12)]">
+      <div
+        class="rounded-3xl bg-white p-4 shadow-[0_14px_30px_rgba(0,0,0,0.12)]"
+      >
         <div class="mb-3 flex items-center justify-between text-sm">
           <span class="text-slate-500">จำนวนทั้งหมด</span>
           <span class="font-semibold">
@@ -70,7 +87,7 @@
           :disabled="cartItems.length === 0 || isCheckingOut"
           @click="checkout"
         >
-          {{ isCheckingOut ? 'กำลังยืนยัน...' : 'ยืนยันสั่งซื้อ' }}
+          {{ isCheckingOut ? "กำลังยืนยัน..." : "ยืนยันสั่งซื้อ" }}
         </button>
       </div>
 
@@ -80,30 +97,30 @@
 </template>
 
 <script setup lang="ts">
-import { WATER_CATALOG } from '~/composables/useLocalWatershop'
-import Swal from 'sweetalert2'
+import { WATER_CATALOG } from "~/composables/useLocalWatershop";
+import Swal from "sweetalert2";
 
 definePageMeta({
-  middleware: 'auth',
-})
+  middleware: "auth",
+});
 
 const imageOf = (id: string) =>
-  WATER_CATALOG.find((d) => d.id === id)?.image ?? '/products/water-bottle.png'
+  WATER_CATALOG.find((d) => d.id === id)?.image ?? "/products/water-bottle.png";
 const bottlesOf = (id: string) =>
-  WATER_CATALOG.find((d) => d.id === id)?.bottlesPerPack ?? 6
+  WATER_CATALOG.find((d) => d.id === id)?.bottlesPerPack ?? 6;
 
 type ReceiptItem = {
-  id: string
-  itemName: string
-  quantity: number
-  amount: number
-  createdAt: string
-}
+  id: string;
+  itemName: string;
+  quantity: number;
+  amount: number;
+  createdAt: string;
+};
 
-const RECEIPTS_STORAGE_KEY = 'watershop-receipts'
+const RECEIPTS_STORAGE_KEY = "watershop-receipts";
 
-const router = useRouter()
-const shop = useLocalWatershop()
+const router = useRouter();
+const shop = useLocalWatershop();
 const {
   items,
   cartItems,
@@ -116,109 +133,124 @@ const {
   totalAmount,
   totalCount,
   totalBottles,
-} = shop
-const isCheckingOut = ref(false)
+} = shop;
+const isCheckingOut = ref(false);
 
 if (import.meta.client) {
-  hydrateShop()
-  ensureCatalog()
+  hydrateShop();
+  ensureCatalog();
 }
 
 const goHome = () => {
-  router.push('/user')
-}
+  router.push("/user/water");
+};
 
 const onQtyChange = (id: string, event: Event) => {
-  const value = Number((event.target as HTMLInputElement).value)
-  updateQuantity(id, value)
-}
+  const value = Number((event.target as HTMLInputElement).value);
+  updateQuantity(id, value);
+};
 
 const topRightToast = Swal.mixin({
   toast: true,
-  position: 'top-end',
+  position: "top-end",
   showConfirmButton: false,
   timer: 1800,
   timerProgressBar: true,
   customClass: {
-    popup: 'watershop-toast',
-    title: 'watershop-toast-title',
-    timerProgressBar: 'watershop-toast-progress',
+    popup: "watershop-toast",
+    title: "watershop-toast-title",
+    timerProgressBar: "watershop-toast-progress",
   },
-})
+});
 
 const checkout = async () => {
   const confirmation = await Swal.fire({
-    title: 'ยืนยันการสั่งซื้อ',
+    title: "ยืนยันการสั่งซื้อ",
     text: `ต้องการยืนยันออเดอร์ ${totalCount.value} รายการ (${totalAmount.value} ฿) ใช่ไหม`,
-    icon: 'question',
-    iconColor: '#0f172a',
-    position: 'center',
+    icon: "question",
+    iconColor: "#0f172a",
+    position: "center",
     width: 360,
-    padding: '1rem',
+    padding: "1rem",
     showCancelButton: true,
-    confirmButtonText: 'ยืนยัน',
-    cancelButtonText: 'ยกเลิก',
+    confirmButtonText: "ยืนยัน",
+    cancelButtonText: "ยกเลิก",
     buttonsStyling: false,
     customClass: {
-      popup: 'watershop-confirm',
-      title: 'watershop-confirm-title',
-      htmlContainer: 'watershop-confirm-text',
-      confirmButton: 'watershop-confirm-btn watershop-confirm-btn-primary',
-      cancelButton: 'watershop-confirm-btn watershop-confirm-btn-secondary',
-      icon: 'watershop-confirm-icon',
+      popup: "watershop-confirm",
+      title: "watershop-confirm-title",
+      htmlContainer: "watershop-confirm-text",
+      confirmButton: "watershop-confirm-btn watershop-confirm-btn-primary",
+      cancelButton: "watershop-confirm-btn watershop-confirm-btn-secondary",
+      icon: "watershop-confirm-icon",
     },
     reverseButtons: true,
-  })
-  if (!confirmation.isConfirmed) return
+  });
+  if (!confirmation.isConfirmed) return;
 
-  isCheckingOut.value = true
+  isCheckingOut.value = true;
 
   try {
-    ensureCatalog()
+    ensureCatalog();
     for (const cartItem of cartItems.value) {
-      const stockItem = items.value.find((item) => item.id === cartItem.id)
-      if (!stockItem) throw new Error(`ไม่พบสินค้า ${cartItem.name}`)
+      const stockItem = items.value.find((item) => item.id === cartItem.id);
+      if (!stockItem) throw new Error(`ไม่พบสินค้า ${cartItem.name}`);
       if (stockItem.stock < cartItem.quantity) {
-        throw new Error(`สต็อก ${cartItem.name} ไม่พอ`)
+        throw new Error(`สต็อก ${cartItem.name} ไม่พอ`);
       }
     }
 
-    const newReceipts: ReceiptItem[] = []
-    for (const cartItem of cartItems.value) {
-      const result = placeOrder(cartItem.id, cartItem.quantity)
-      newReceipts.push({
-        id: `${Date.now()}${Math.floor(Math.random() * 100)}`.slice(-6),
-        itemName: result.itemName,
-        quantity: cartItem.quantity,
-        amount: result.amount,
-        createdAt: new Date().toISOString(),
-      })
+    const orderedItems = [...cartItems.value];
+    const finalTotalQty = totalBottles.value;
+    const finalTotalAmount = totalAmount.value;
+    const summaryName =
+      orderedItems.length === 1
+        ? orderedItems[0]!.name
+        : `ออเดอร์รวม ${orderedItems.length} รายการ`;
+
+    const newReceipts: ReceiptItem[] = [];
+    for (const cartItem of orderedItems) {
+      placeOrder(cartItem.id, cartItem.quantity);
     }
+
+    newReceipts.push({
+      id: `${Date.now()}${Math.floor(Math.random() * 100)}`.slice(-6),
+      itemName: summaryName,
+      quantity: finalTotalQty,
+      amount: finalTotalAmount,
+      createdAt: new Date().toISOString(),
+    });
 
     if (import.meta.client) {
-      const raw = localStorage.getItem(RECEIPTS_STORAGE_KEY)
-      const currentReceipts = raw ? (JSON.parse(raw) as ReceiptItem[]) : []
-      localStorage.setItem(RECEIPTS_STORAGE_KEY, JSON.stringify([...newReceipts, ...currentReceipts]))
+      const raw = localStorage.getItem(RECEIPTS_STORAGE_KEY);
+      const currentReceipts = raw ? (JSON.parse(raw) as ReceiptItem[]) : [];
+      localStorage.setItem(
+        RECEIPTS_STORAGE_KEY,
+        JSON.stringify([...newReceipts, ...currentReceipts]),
+      );
     }
 
-    clearCart()
+    clearCart();
     await topRightToast.fire({
-      icon: 'success',
-      title: 'สั่งซื้อสำเร็จ',
-      text: 'ระบบบันทึกบิลเรียบร้อยแล้ว',
-    })
-    await router.push('/user/bills')
+      icon: "success",
+      title: "สั่งซื้อสำเร็จ",
+      text: "ระบบบันทึกบิลเรียบร้อยแล้ว",
+    });
+    await router.push("/user/bills");
   } catch (error) {
     await topRightToast.fire({
-      text: error instanceof Error ? error.message : 'เกิดข้อผิดพลาด กรุณาลองอีกครั้ง',
-      icon: 'error',
-      title: 'สั่งซื้อไม่สำเร็จ',
+      text:
+        error instanceof Error
+          ? error.message
+          : "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง",
+      icon: "error",
+      title: "สั่งซื้อไม่สำเร็จ",
       timer: 2400,
-    })
+    });
   } finally {
-    isCheckingOut.value = false
+    isCheckingOut.value = false;
   }
-}
+};
 </script>
 
 <style scoped>

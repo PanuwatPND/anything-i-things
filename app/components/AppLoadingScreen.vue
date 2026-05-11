@@ -9,7 +9,7 @@
       class="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-[44%] rounded-full bg-cyan-300/10 blur-2xl"
     />
 
-    <div class="relative flex w-full max-w-sm flex-col items-center text-center">
+    <div class="relative -translate-y-6 flex w-full max-w-sm flex-col items-center text-center">
       <div class="logo-stage grid place-items-center p-2">
         <div v-if="!complete" class="logo-floor" />
         <div v-if="!complete" class="logo-halo" />

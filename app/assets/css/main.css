@@ -1,3 +1,17 @@
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+
+html,
+body {
+  font-family: "Kanit", "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
 .page-enter-active,
 .page-leave-active {
   transition: all 0.35s ease;
@@ -31,6 +45,15 @@
 .no-spin[type='number'] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+/* Prevent double-tap zoom on common tap targets */
+button,
+a,
+[role='button'],
+input[type='button'],
+input[type='submit'] {
+  touch-action: manipulation;
 }
 
 @keyframes floatIn {

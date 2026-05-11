@@ -229,9 +229,7 @@ export const useLocalWatershop = () => {
   const totalBottles = computed(() =>
     cartItems.value.reduce((sum, item) => sum + item.quantity, 0),
   )
-  const totalAmount = computed(() =>
-    cartItems.value.reduce((sum, item) => sum + getPackPrice(item.quantity), 0),
-  )
+  const totalAmount = computed(() => getPackPrice(totalBottles.value))
 
   return {
     items,

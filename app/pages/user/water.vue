@@ -92,7 +92,7 @@
           <div class="w-44 shrink-0 space-y-3">
             <div>
               <div class="mb-1 flex items-center justify-between text-xs">
-                <span class="text-slate-500">Receipts</span>
+                <span class="text-slate-500">จำนวนครั้ง / ใบเสร็จ</span>
                 <span class="font-semibold tabular-nums text-slate-900">
                   <span class="text-sm">{{ todayReceiptCount }}</span>
                   <span class="text-slate-400"> /20</span>
@@ -107,16 +107,16 @@
             </div>
             <div>
               <div class="mb-1 flex items-center justify-between text-xs">
-                <span class="text-slate-500">Sold Qty</span>
+                <span class="text-slate-500">ประหยัด</span>
                 <span class="font-semibold tabular-nums text-slate-900">
-                  <span class="text-sm">{{ todaySoldQty }}</span>
-                  <span class="text-slate-400"> /80</span>
+                  <span class="text-sm">{{ todaySavedAmount }}</span>
+                  <span class="text-slate-400"> /200</span>
                 </span>
               </div>
               <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
                 <div
                   class="h-full rounded-full bg-black transition-[width] duration-500"
-                  :style="{ width: `${soldProgress}%` }"
+                  :style="{ width: `${savedProgress}%` }"
                 />
               </div>
             </div>
@@ -348,10 +348,14 @@ const catalogItems = computed(() =>
 const todayReceiptCount = computed(
   () => receipts.value.filter((r) => isToday(r.createdAt)).length,
 );
-const todaySoldQty = computed(() =>
+const todaySavedAmount = computed(() =>
   receipts.value
     .filter((r) => isToday(r.createdAt))
-    .reduce((sum, r) => sum + r.quantity, 0),
+    .reduce((sum, r) => {
+      const regularPrice = r.quantity * 35;
+      const saved = Math.max(regularPrice - r.amount, 0);
+      return sum + saved;
+    }, 0),
 );
 const todayTotalAmount = computed(() =>
   receipts.value
@@ -368,8 +372,8 @@ const cartTotalAmount = computed(() =>
 const receiptProgress = computed(() =>
   Math.min((todayReceiptCount.value / 20) * 100, 100),
 );
-const soldProgress = computed(() =>
-  Math.min((todaySoldQty.value / 80) * 100, 100),
+const savedProgress = computed(() =>
+  Math.min((todaySavedAmount.value / 200) * 100, 100),
 );
 const spendProgress = computed(() =>
   Math.min((todayTotalAmount.value / 2000) * 100, 100),
@@ -569,7 +573,6 @@ const onOrder = (itemId: string, event?: MouseEvent) => {
     if (trigger) {
       flyToCart(trigger, targetItem.image);
     }
-
   } catch (error) {
     // Keep flow silent; out-of-stock state is already shown on each item card.
     console.error(error);
@@ -596,5 +599,4 @@ const onOrder = (itemId: string, event?: MouseEvent) => {
     transform: scale(1);
   }
 }
-
 </style>
