@@ -1,11 +1,7 @@
 <template>
   <div
     class="px-3 py-2 transition-all duration-300 ease-out"
-    :class="
-      floating
-        ? 'bg-transparent'
-        : 'bg-transparent'
-    "
+    :class="headerShellClass"
   >
     <div class="flex items-center gap-3">
       <button
@@ -24,7 +20,9 @@
         <p class="text-[11px] leading-none text-slate-500">
           {{ todayLabel }}
         </p>
-        <h1 class="mt-1 truncate text-base font-bold leading-tight tracking-tight text-slate-900">
+        <h1
+          class="mt-1 truncate text-base font-bold leading-tight tracking-tight text-slate-900"
+        >
           สวัสดี,
           <span class="font-medium text-slate-600">{{ displayName }}</span>
         </h1>
@@ -34,7 +32,11 @@
         type="button"
         data-user-cart-icon
         class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-all active:scale-95"
-        :class="cartCount > 0 ? 'bg-black text-white shadow-lg' : 'bg-white text-slate-700 ring-1 ring-black/10 hover:ring-black/20'"
+        :class="
+          cartCount > 0
+            ? 'bg-black text-white shadow-lg'
+            : 'bg-white text-slate-700 ring-1 ring-black/10 hover:ring-black/20'
+        "
         aria-label="เปิดตะกร้า"
         @click="goCart"
       >
@@ -50,7 +52,9 @@
         >
           <circle cx="9" cy="21" r="1" />
           <circle cx="20" cy="21" r="1" />
-          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+          <path
+            d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+          />
         </svg>
         <span
           v-if="cartCount > 0"
@@ -64,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
+const props = withDefaults(
   defineProps<{
     floating?: boolean;
   }>(),
@@ -76,7 +80,10 @@ withDefaults(
 const router = useRouter();
 const { user } = useAuth();
 const { totalCount: cartCount } = useLocalWatershop();
-const DEFAULT_AVATAR = "https://api.dicebear.com/9.x/initials/svg?seed=Water%20User";
+const DEFAULT_AVATAR =
+  "https://api.dicebear.com/9.x/initials/svg?seed=Water%20User";
+const HEADER_FLOAT_SCROLL_THRESHOLD = 64;
+const hasScrolled = ref(false);
 
 const todayLabel = computed(() => {
   try {
@@ -106,6 +113,12 @@ const displayName = computed(() => {
 });
 
 const avatarSrc = computed(() => user.value?.avatar?.trim() || DEFAULT_AVATAR);
+const headerShellClass = computed(() => {
+  if (props.floating || hasScrolled.value) {
+    return " border border-black/10 bg-white/85 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] backdrop-blur";
+  }
+  return "bg-transparent";
+});
 
 const goProfile = () => {
   router.push("/user/profile");
@@ -114,6 +127,20 @@ const goProfile = () => {
 const goCart = () => {
   router.push("/user/cart");
 };
+
+const syncScrollState = () => {
+  if (!import.meta.client) return;
+  hasScrolled.value = window.scrollY > HEADER_FLOAT_SCROLL_THRESHOLD;
+};
+
+onMounted(() => {
+  syncScrollState();
+  window.addEventListener("scroll", syncScrollState, { passive: true });
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("scroll", syncScrollState);
+});
 </script>
 
 <style scoped>
@@ -136,4 +163,3 @@ const goCart = () => {
   }
 }
 </style>
-
