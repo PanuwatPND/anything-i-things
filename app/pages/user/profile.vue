@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#ececec] px-4 py-8 text-slate-900">
+  <div class="min-h-screen bg-[#ececec] px-4 pb-32 pt-8 text-slate-900">
     <div class="mx-auto w-full max-w-md space-y-4">
       <div class="rounded-3xl bg-white p-5 shadow-[0_18px_36px_rgba(0,0,0,0.12)]">
         <div class="flex items-center gap-3">
@@ -29,7 +29,7 @@
 
       <div class="rounded-3xl bg-white p-4 shadow-[0_16px_30px_rgba(0,0,0,0.12)]">
         <button class="w-full rounded-xl border border-black px-4 py-2 font-semibold hover:bg-black hover:text-white" @click="goHome">
-          กลับหน้าหลัก
+          ไปหน้าเมนูรวม
         </button>
         <button
           class="mt-2 w-full rounded-xl bg-black px-4 py-2 font-semibold text-white hover:bg-slate-800"

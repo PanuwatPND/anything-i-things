@@ -95,7 +95,8 @@ const onSubmit = async () => {
 
   try {
     await login(email.value, password.value, role.value)
-    await router.push(role.value === 'admin' ? '/admin' : '/user')
+    const destination = role.value === 'admin' ? '/admin' : '/user/water'
+    await router.push(`/loading?to=${encodeURIComponent(destination)}`)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'เข้าสู่ระบบไม่สำเร็จ'
   } finally {
