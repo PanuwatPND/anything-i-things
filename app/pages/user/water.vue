@@ -31,8 +31,8 @@
               <div class="mb-1 flex items-center justify-between text-xs">
                 <span class="text-slate-500">จำนวนครั้ง / ใบเสร็จ</span>
                 <span class="font-semibold tabular-nums text-slate-900">
-                  <span class="text-sm">{{ todayReceiptCount }}</span>
-                  <span class="text-slate-400"> /20</span>
+                  <span class="text-sm">{{ formatInt(todayReceiptCount) }}</span>
+                  <span class="text-slate-400"> /{{ formatInt(20) }}</span>
                 </span>
               </div>
               <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
@@ -46,8 +46,8 @@
               <div class="mb-1 flex items-center justify-between text-xs">
                 <span class="text-slate-500">ประหยัด</span>
                 <span class="font-semibold tabular-nums text-slate-900">
-                  <span class="text-sm">{{ todaySavedAmount }}</span>
-                  <span class="text-slate-400"> /200</span>
+                  <span class="text-sm">{{ formatInt(todaySavedAmount) }}</span>
+                  <span class="text-slate-400"> /{{ formatInt(200) }}</span>
                 </span>
               </div>
               <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
@@ -61,8 +61,8 @@
               <div class="mb-1 flex items-center justify-between text-xs">
                 <span class="text-slate-500">Spend Today</span>
                 <span class="font-semibold tabular-nums text-slate-900">
-                  <span class="text-sm">{{ todayTotalAmount }}</span>
-                  <span class="text-slate-400"> /2000</span>
+                  <span class="text-sm">{{ formatInt(todayTotalAmount) }}</span>
+                  <span class="text-slate-400"> /{{ formatInt(2000) }}</span>
                 </span>
               </div>
               <div class="h-1.5 overflow-hidden rounded-full bg-slate-200">
@@ -86,7 +86,7 @@
           <span
             class="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-500"
           >
-            {{ catalogItems.length }} เมนู
+            {{ formatInt(catalogItems.length) }} เมนู
           </span>
         </div>
         <p class="mt-2 text-xs text-slate-500">
@@ -117,7 +117,7 @@
                   {{ item.name }}
                 </p>
                 <p class="text-xs text-slate-500">
-                  1 แพ็ค = {{ item.bottlesPerPack }} ขวด · {{ item.price }} ฿
+                  1 แพ็ค = {{ formatInt(item.bottlesPerPack) }} ขวด · {{ formatInt(item.price) }} ฿
                 </p>
                 <p class="text-[11px] text-slate-400">โปรโมชัน 3 แพ็ค 100 ฿</p>
                 <p
@@ -129,7 +129,9 @@
                   "
                 >
                   {{
-                    item.stock <= 0 ? "สินค้าหมด" : `คงเหลือ ${item.stock} แพ็ค`
+                    item.stock <= 0
+                      ? "สินค้าหมด"
+                      : `คงเหลือ ${formatInt(item.stock)} แพ็ค`
                   }}
                 </p>
               </div>
@@ -196,7 +198,7 @@
             </button>
           </div>
           <p class="mt-1 text-xs text-slate-500">
-            {{ cartCount }} รายการ · {{ cartTotalAmount }} ฿
+            {{ formatInt(cartCount) }} รายการ · {{ formatInt(cartTotalAmount) }} ฿
           </p>
           <ul class="mt-2 space-y-1.5 text-sm text-slate-800">
             <li
@@ -205,7 +207,7 @@
               class="flex justify-between gap-2"
             >
               <span class="min-w-0 truncate">{{ line.name }}</span>
-              <span class="shrink-0 text-slate-500">×{{ line.quantity }}</span>
+              <span class="shrink-0 text-slate-500">×{{ formatInt(line.quantity) }}</span>
             </li>
           </ul>
         </div>
@@ -235,6 +237,7 @@ type ReceiptItem = {
 const RECEIPTS_STORAGE_KEY = "watershop-receipts";
 
 const router = useRouter();
+const { formatInt } = useFormatNumber();
 
 const shop = useLocalWatershop();
 const {

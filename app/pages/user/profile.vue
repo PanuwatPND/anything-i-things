@@ -69,11 +69,11 @@
       <div class="grid grid-cols-2 gap-3">
         <div class="rounded-2xl bg-black p-4 text-white shadow-[0_10px_24px_rgba(0,0,0,0.2)]">
           <p class="text-xs text-white/70">บิลทั้งหมด</p>
-          <p class="mt-1 text-2xl font-bold">{{ receipts.length }}</p>
+          <p class="mt-1 text-2xl font-bold">{{ formatInt(receipts.length) }}</p>
         </div>
         <div class="rounded-2xl bg-white p-4 shadow-[0_10px_24px_rgba(0,0,0,0.12)]">
           <p class="text-xs text-slate-500">ยอดสั่งรวม</p>
-          <p class="mt-1 text-2xl font-bold">{{ totalSpend }}</p>
+          <p class="mt-1 text-2xl font-bold">{{ formatInt(totalSpend) }}</p>
         </div>
       </div>
 
@@ -108,6 +108,7 @@ const RECEIPTS_STORAGE_KEY = 'watershop-receipts'
 const DEFAULT_AVATAR = '/default-avatar.png'
 
 const router = useRouter()
+const { formatInt } = useFormatNumber()
 const { user, logout, updateProfile } = useAuth()
 const receipts = ref<ReceiptItem[]>([])
 const totalSpend = computed(() => receipts.value.reduce((sum, receipt) => sum + receipt.amount, 0))

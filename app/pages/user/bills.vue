@@ -30,7 +30,7 @@
               <div class="min-w-0">
                 <p class="font-semibold text-slate-900">{{ r.itemName }}</p>
                 <p class="mt-0.5 text-xs text-slate-500">
-                  {{ formatDate(r.createdAt) }} · {{ r.quantity }} ชิ้น
+                  {{ formatDate(r.createdAt) }} · {{ formatInt(r.quantity) }} ชิ้น
                 </p>
                 <button
                   v-if="statusOf(idx).code === 'shipping'"
@@ -49,7 +49,7 @@
                   {{ statusOf(idx).label }}
                 </p>
               </div>
-              <p class="shrink-0 font-semibold tabular-nums">{{ r.amount }} ฿</p>
+              <p class="shrink-0 font-semibold tabular-nums">{{ formatInt(r.amount) }} ฿</p>
             </div>
           </li>
         </ul>
@@ -82,6 +82,7 @@ type ReceiptItem = {
 
 const RECEIPTS_STORAGE_KEY = 'watershop-receipts'
 
+const { formatInt } = useFormatNumber()
 const receipts = ref<ReceiptItem[]>([])
 const trackingOpen = ref(false)
 const trackingTitle = ref('รายการจัดส่ง')

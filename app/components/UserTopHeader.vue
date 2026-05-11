@@ -1,6 +1,6 @@
 <template>
   <div
-    class="px-3 py-2 pt-4 transition-all duration-300 ease-out"
+    class="px-0 py-5 transition-all duration-300 ease-out"
     :class="headerShellClass"
   >
     <div class="flex items-center gap-3">
@@ -60,7 +60,7 @@
           v-if="cartCount > 0"
           class="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-slate-100 bg-white px-0.5 text-[10px] font-bold leading-none text-black"
         >
-          {{ cartCount > 9 ? "9+" : cartCount }}
+          {{ cartCount > 9 ? "9+" : formatInt(cartCount) }}
         </span>
       </button>
     </div>
@@ -78,6 +78,7 @@ const props = withDefaults(
 );
 
 const router = useRouter();
+const { formatInt } = useFormatNumber();
 const { user } = useAuth();
 const { totalCount: cartCount } = useLocalWatershop();
 const DEFAULT_AVATAR = "/default-avatar.png";

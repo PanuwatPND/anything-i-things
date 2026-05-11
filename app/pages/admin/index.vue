@@ -20,15 +20,15 @@
       <div class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3">
         <div class="rounded-2xl bg-black p-4 text-white shadow-[0_12px_26px_rgba(0,0,0,0.25)] soft-pop">
           <p class="text-xs text-white/75">จำนวนเมนู</p>
-          <p class="mt-1 text-2xl font-bold">{{ items.length }}</p>
+          <p class="mt-1 text-2xl font-bold">{{ formatInt(items.length) }}</p>
         </div>
         <div class="rounded-2xl bg-white p-4 shadow-[0_12px_26px_rgba(0,0,0,0.16)] soft-pop">
           <p class="text-xs text-slate-500">สต็อกรวม</p>
-          <p class="mt-1 text-2xl font-bold">{{ totalStock }}</p>
+          <p class="mt-1 text-2xl font-bold">{{ formatInt(totalStock) }}</p>
         </div>
         <div class="rounded-2xl bg-white p-4 shadow-[0_12px_26px_rgba(0,0,0,0.16)] soft-pop">
           <p class="text-xs text-slate-500">ใกล้หมด (<= 5)</p>
-          <p class="mt-1 text-2xl font-bold">{{ lowStockItems }}</p>
+          <p class="mt-1 text-2xl font-bold">{{ formatInt(lowStockItems) }}</p>
         </div>
       </div>
 
@@ -50,7 +50,7 @@
             <div>
               <p class="font-semibold">{{ item.name }}</p>
               <p class="text-sm text-slate-500">
-                ราคา {{ item.price }} บาท · 1 แพ็ค = {{ item.bottlesPerPack }} ขวด
+                ราคา {{ formatInt(item.price) }} บาท · 1 แพ็ค = {{ formatInt(item.bottlesPerPack) }} ขวด
               </p>
             </div>
           </div>
@@ -87,6 +87,7 @@ definePageMeta({
 })
 
 const router = useRouter()
+const { formatInt } = useFormatNumber()
 const { user, logout } = useAuth()
 const { items, hydrateShop, ensureCatalog, updateStock } = useLocalWatershop()
 const totalStock = computed(() => items.value.reduce((sum, item) => sum + item.stock, 0))

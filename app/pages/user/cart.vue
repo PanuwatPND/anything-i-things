@@ -46,7 +46,7 @@
             <div class="min-w-0 flex-1">
               <p class="truncate font-semibold">{{ item.name }}</p>
               <p class="text-xs text-slate-500">
-                1 แพ็ค = {{ bottlesOf(item.id) }} ขวด · 35 ฿ · 3 แพ็ค 100 ฿
+                1 แพ็ค = {{ formatInt(bottlesOf(item.id)) }} ขวด · 35 ฿ · 3 แพ็ค 100 ฿
               </p>
             </div>
             <div class="flex shrink-0 items-center gap-2">
@@ -74,12 +74,12 @@
         <div class="mb-3 flex items-center justify-between text-sm">
           <span class="text-slate-500">จำนวนทั้งหมด</span>
           <span class="font-semibold">
-            {{ totalCount }} รายการ · {{ totalBottles }} แพ็ค
+            {{ formatInt(totalCount) }} รายการ · {{ formatInt(totalBottles) }} แพ็ค
           </span>
         </div>
         <div class="mb-4 flex items-center justify-between">
           <span class="text-slate-600">ยอดรวม</span>
-          <span class="text-2xl font-bold">{{ totalAmount }} ฿</span>
+          <span class="text-2xl font-bold">{{ formatInt(totalAmount) }} ฿</span>
         </div>
 
         <button
@@ -121,6 +121,7 @@ type ReceiptItem = {
 const RECEIPTS_STORAGE_KEY = "watershop-receipts";
 
 const router = useRouter();
+const { formatInt } = useFormatNumber();
 const shop = useLocalWatershop();
 const {
   items,
@@ -167,7 +168,7 @@ const topRightToast = Swal.mixin({
 const checkout = async () => {
   const confirmation = await Swal.fire({
     title: "ยืนยันการสั่งซื้อ",
-    text: `ต้องการยืนยันออเดอร์ ${totalCount.value} รายการ (${totalAmount.value} ฿) ใช่ไหม`,
+    text: `ต้องการยืนยันออเดอร์ ${formatInt(totalCount.value)} รายการ (${formatInt(totalAmount.value)} ฿) ใช่ไหม`,
     icon: "question",
     iconColor: "#0f172a",
     position: "center",
@@ -207,7 +208,7 @@ const checkout = async () => {
     const summaryName =
       orderedItems.length === 1
         ? orderedItems[0]!.name
-        : `ออเดอร์รวม ${orderedItems.length} รายการ`;
+        : `ออเดอร์รวม ${formatInt(orderedItems.length)} รายการ`;
 
     const newReceipts: ReceiptItem[] = [];
     for (const cartItem of orderedItems) {
