@@ -1,6 +1,6 @@
 <template>
   <div
-    class="px-3 py-2 transition-all duration-300 ease-out"
+    class="px-3 py-4 mt-2 transition-all duration-300 ease-out"
     :class="headerShellClass"
   >
     <div class="flex items-center gap-3">
@@ -115,9 +115,9 @@ const displayName = computed(() => {
 const avatarSrc = computed(() => user.value?.avatar?.trim() || DEFAULT_AVATAR);
 const headerShellClass = computed(() => {
   if (props.floating || hasScrolled.value) {
-    return " border border-black/10 bg-white/85 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] backdrop-blur";
+    return " border border-black/10 bg-white/85 opacity-100 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] backdrop-blur translate-y-0 scale-100";
   }
-  return "bg-transparent";
+  return " border border-transparent bg-transparent opacity-90 shadow-none backdrop-blur-0 -translate-y-1 scale-[0.985]";
 });
 
 const goProfile = () => {

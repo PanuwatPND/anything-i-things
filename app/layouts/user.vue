@@ -3,7 +3,7 @@
     class="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-slate-100"
   >
     <div class="sticky top-0 z-30">
-      <div class="mx-auto w-full max-w-md">
+      <div class="mx-auto w-full max-w-md ">
         <UserTopHeader />
       </div>
     </div>
