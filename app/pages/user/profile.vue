@@ -1,7 +1,11 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-slate-100 px-4 pb-32 pt-2 text-slate-900">
+  <div
+    class="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-slate-100 px-4 pb-32 pt-2 text-slate-900"
+  >
     <div class="mx-auto w-full max-w-md space-y-4">
-      <div class="rounded-3xl bg-white p-5 shadow-[0_18px_36px_rgba(0,0,0,0.12)]">
+      <div
+        class="rounded-3xl bg-white p-5 shadow-[0_18px_36px_rgba(0,0,0,0.12)]"
+      >
         <div class="flex items-center gap-3">
           <img
             :src="avatarPreview"
@@ -65,18 +69,29 @@
 
       <div v-if="!showEditor" class="space-y-4">
         <div class="grid grid-cols-2 gap-3">
-          <div class="rounded-2xl bg-black p-4 text-white shadow-[0_10px_24px_rgba(0,0,0,0.2)]">
+          <div
+            class="rounded-2xl bg-black p-4 text-white shadow-[0_10px_24px_rgba(0,0,0,0.2)]"
+          >
             <p class="text-xs text-white/70">บิลทั้งหมด</p>
-            <p class="mt-1 text-2xl font-bold">{{ formatInt(receipts.length) }}</p>
+            <p class="mt-1 text-2xl font-bold">
+              {{ formatInt(receipts.length) }}
+            </p>
           </div>
-          <div class="rounded-2xl bg-white p-4 shadow-[0_10px_24px_rgba(0,0,0,0.12)]">
+          <div
+            class="rounded-2xl bg-white p-4 shadow-[0_10px_24px_rgba(0,0,0,0.12)]"
+          >
             <p class="text-xs text-slate-500">ยอดสั่งรวม</p>
             <p class="mt-1 text-2xl font-bold">{{ formatInt(totalSpend) }}</p>
           </div>
         </div>
 
-        <div class="rounded-3xl bg-white p-4 shadow-[0_16px_30px_rgba(0,0,0,0.12)]">
-          <button class="w-full rounded-xl border border-black px-4 py-2 font-semibold hover:bg-black hover:text-white" @click="goHome">
+        <div
+          class="rounded-3xl bg-white p-4 shadow-[0_16px_30px_rgba(0,0,0,0.12)]"
+        >
+          <button
+            class="w-full rounded-xl border border-black px-4 py-2 font-semibold hover:bg-black hover:text-white"
+            @click="goHome"
+          >
             ไปหน้าเมนูรวม
           </button>
           <button
@@ -89,9 +104,33 @@
       </div>
 
       <div v-show="showEditor && activeTab === 'personal'" class="space-y-4">
-        <form class="rounded-3xl bg-white p-4 shadow-[0_16px_30px_rgba(0,0,0,0.12)]" @submit.prevent="saveProfile">
+        <form
+          class="rounded-3xl bg-white p-4 shadow-[0_16px_30px_rgba(0,0,0,0.12)]"
+          @submit.prevent="saveProfile"
+        >
           <p class="text-sm font-semibold text-slate-900">แก้ไขข้อมูลโปรไฟล์</p>
-          <p class="mt-1 text-xs text-slate-500">สามารถอัปเดตชื่อ บ้านเลขที่ และรูปโปรไฟล์ได้</p>
+          <p class="mt-1 text-xs text-slate-500">
+            สามารถอัปเดตชื่อ บ้านเลขที่ และรูปโปรไฟล์ได้
+          </p>
+
+          <hr class="my-4 border-slate-200" />
+
+          <div class="mt-4">
+            <label class="text-xs font-medium text-slate-600">รูปโปรไฟล์</label>
+            <div class="mt-2 flex items-center gap-3">
+              <img
+                :src="avatarPreview"
+                alt="avatar preview"
+                class="h-12 w-12 rounded-full border border-black/10 bg-slate-100"
+              />
+              <input
+                type="file"
+                accept="image/*"
+                class="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-black file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-slate-800"
+                @change="onAvatarSelect"
+              />
+            </div>
+          </div>
 
           <div class="mt-4 space-y-3">
             <label class="block">
@@ -113,22 +152,11 @@
                 placeholder="เช่น 99/99"
               />
             </label>
-
-            <div>
-              <label class="text-xs font-medium text-slate-600">รูปโปรไฟล์</label>
-              <div class="mt-2 flex items-center gap-3">
-                <img :src="avatarPreview" alt="avatar preview" class="h-12 w-12 rounded-full border border-black/10 bg-slate-100" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  class="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-black file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-slate-800"
-                  @change="onAvatarSelect"
-                />
-              </div>
-            </div>
           </div>
 
-          <p v-if="notice" class="mt-3 text-xs text-emerald-600">{{ notice }}</p>
+          <p v-if="notice" class="mt-3 text-xs text-emerald-600">
+            {{ notice }}
+          </p>
 
           <button
             type="submit"
@@ -143,15 +171,23 @@
         v-show="showEditor && activeTab === 'web'"
         class="rounded-3xl bg-white p-4 shadow-[0_16px_30px_rgba(0,0,0,0.12)]"
       >
-        <p class="text-sm font-semibold text-slate-900">การแสดงผลและความเป็นส่วนตัว</p>
+        <p class="text-sm font-semibold text-slate-900">
+          การแสดงผลและความเป็นส่วนตัว
+        </p>
         <p class="mt-1 text-xs text-slate-500">
           ตัวเลือกเหล่านี้เก็บในอุปกรณ์นี้เท่านั้น ไม่ส่งไปเซิร์ฟเวอร์
         </p>
 
-        <label class="mt-4 flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+        <label
+          class="mt-4 flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3"
+        >
           <span class="min-w-0">
-            <span class="block text-sm font-medium text-slate-800">ปิดเอฟเฟกต์ blur ตอนเปลี่ยนหน้า</span>
-            <span class="mt-0.5 block text-[11px] text-slate-500">ลด overlay โฟกัสระหว่างนำทาง</span>
+            <span class="block text-sm font-medium text-slate-800"
+              >ปิดเอฟเฟกต์ blur ตอนเปลี่ยนหน้า</span
+            >
+            <span class="mt-0.5 block text-[11px] text-slate-500"
+              >ลด overlay โฟกัสระหว่างนำทาง</span
+            >
           </span>
           <input
             :checked="disableRouteBlur"
@@ -161,10 +197,13 @@
           />
         </label>
 
-        <div class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+        <div
+          class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3"
+        >
           <p class="text-sm font-medium text-slate-800">แชทบอทลุคซาเก้ท</p>
           <p class="mt-0.5 text-[11px] text-slate-500">
-            ล้างชื่อเล่นที่บันทึกไว้ในเครื่อง ระบบจะถามชื่อใหม่เมื่อเปิดแชทครั้งถัดไป
+            ล้างชื่อเล่นที่บันทึกไว้ในเครื่อง
+            ระบบจะถามชื่อใหม่เมื่อเปิดแชทครั้งถัดไป
           </p>
           <button
             type="button"
@@ -175,23 +214,36 @@
           </button>
         </div>
 
-        <p v-if="webNotice" class="mt-3 text-xs text-emerald-600">{{ webNotice }}</p>
+        <p v-if="webNotice" class="mt-3 text-xs text-emerald-600">
+          {{ webNotice }}
+        </p>
       </div>
 
       <div v-if="showEditor && activeTab === 'web'" class="space-y-4">
         <div class="grid grid-cols-2 gap-3">
-          <div class="rounded-2xl bg-black p-4 text-white shadow-[0_10px_24px_rgba(0,0,0,0.2)]">
+          <div
+            class="rounded-2xl bg-black p-4 text-white shadow-[0_10px_24px_rgba(0,0,0,0.2)]"
+          >
             <p class="text-xs text-white/70">บิลทั้งหมด</p>
-            <p class="mt-1 text-2xl font-bold">{{ formatInt(receipts.length) }}</p>
+            <p class="mt-1 text-2xl font-bold">
+              {{ formatInt(receipts.length) }}
+            </p>
           </div>
-          <div class="rounded-2xl bg-white p-4 shadow-[0_10px_24px_rgba(0,0,0,0.12)]">
+          <div
+            class="rounded-2xl bg-white p-4 shadow-[0_10px_24px_rgba(0,0,0,0.12)]"
+          >
             <p class="text-xs text-slate-500">ยอดสั่งรวม</p>
             <p class="mt-1 text-2xl font-bold">{{ formatInt(totalSpend) }}</p>
           </div>
         </div>
 
-        <div class="rounded-3xl bg-white p-4 shadow-[0_16px_30px_rgba(0,0,0,0.12)]">
-          <button class="w-full rounded-xl border border-black px-4 py-2 font-semibold hover:bg-black hover:text-white" @click="goHome">
+        <div
+          class="rounded-3xl bg-white p-4 shadow-[0_16px_30px_rgba(0,0,0,0.12)]"
+        >
+          <button
+            class="w-full rounded-xl border border-black px-4 py-2 font-semibold hover:bg-black hover:text-white"
+            @click="goHome"
+          >
             ไปหน้าเมนูรวม
           </button>
           <button
@@ -219,108 +271,112 @@
 
 <script setup lang="ts">
 definePageMeta({
-  layout: 'user',
-  middleware: 'auth',
-})
+  layout: "user",
+  middleware: "auth",
+});
 
 type ReceiptItem = {
-  amount: number
-}
+  amount: number;
+};
 
-const RECEIPTS_STORAGE_KEY = 'watershop-receipts'
-const DEFAULT_AVATAR = '/default-avatar.png'
-const ROUTE_BLUR_DISABLED_KEY = 'watershop-disable-route-blur'
+const RECEIPTS_STORAGE_KEY = "watershop-receipts";
+const DEFAULT_AVATAR = "/default-avatar.png";
+const ROUTE_BLUR_DISABLED_KEY = "watershop-disable-route-blur";
 /** ต้องตรงกับ UserFinanceChatDock.vue */
-const CHAT_DISPLAY_NAME_KEY = 'lunarwater-chat-display-name'
+const CHAT_DISPLAY_NAME_KEY = "lunarwater-chat-display-name";
 
-const router = useRouter()
-const { formatInt } = useFormatNumber()
-const { user, logout, updateProfile } = useAuth()
-const receipts = ref<ReceiptItem[]>([])
-const totalSpend = computed(() => receipts.value.reduce((sum, receipt) => sum + receipt.amount, 0))
-const notice = ref('')
-const webNotice = ref('')
-const showEditor = ref(false)
-const activeTab = ref<'personal' | 'web'>('personal')
-const disableRouteBlur = ref(false)
+const router = useRouter();
+const { formatInt } = useFormatNumber();
+const { user, logout, updateProfile } = useAuth();
+const receipts = ref<ReceiptItem[]>([]);
+const totalSpend = computed(() =>
+  receipts.value.reduce((sum, receipt) => sum + receipt.amount, 0),
+);
+const notice = ref("");
+const webNotice = ref("");
+const showEditor = ref(false);
+const activeTab = ref<"personal" | "web">("personal");
+const disableRouteBlur = ref(false);
 const form = reactive({
-  name: '',
-  houseNo: '',
-  avatar: '',
-})
+  name: "",
+  houseNo: "",
+  avatar: "",
+});
 
-const avatarPreview = computed(() => form.avatar || DEFAULT_AVATAR)
-const displayName = computed(() => user.value?.name || 'ผู้ใช้งานทั่วไป')
+const avatarPreview = computed(() => form.avatar || DEFAULT_AVATAR);
+const displayName = computed(() => user.value?.name || "ผู้ใช้งานทั่วไป");
 
 if (import.meta.client) {
-  const raw = localStorage.getItem(RECEIPTS_STORAGE_KEY)
-  receipts.value = raw ? (JSON.parse(raw) as ReceiptItem[]) : []
-  disableRouteBlur.value = localStorage.getItem(ROUTE_BLUR_DISABLED_KEY) === '1'
+  const raw = localStorage.getItem(RECEIPTS_STORAGE_KEY);
+  receipts.value = raw ? (JSON.parse(raw) as ReceiptItem[]) : [];
+  disableRouteBlur.value =
+    localStorage.getItem(ROUTE_BLUR_DISABLED_KEY) === "1";
 }
 
 watchEffect(() => {
-  form.name = user.value?.name ?? ''
-  form.houseNo = user.value?.houseNo ?? ''
-  form.avatar = user.value?.avatar ?? ''
-})
+  form.name = user.value?.name ?? "";
+  form.houseNo = user.value?.houseNo ?? "";
+  form.avatar = user.value?.avatar ?? "";
+});
 
 const goHome = () => {
-  router.push('/user')
-}
+  router.push("/user");
+};
 
-const routeBlurOverlay = useState('route-nav-blur', () => false)
+const routeBlurOverlay = useState("route-nav-blur", () => false);
 
 const onRouteBlurChange = (event: Event) => {
-  const checked = (event.target as HTMLInputElement).checked
-  disableRouteBlur.value = checked
-  if (!import.meta.client) return
+  const checked = (event.target as HTMLInputElement).checked;
+  disableRouteBlur.value = checked;
+  if (!import.meta.client) return;
   if (checked) {
-    localStorage.setItem(ROUTE_BLUR_DISABLED_KEY, '1')
-    routeBlurOverlay.value = false
+    localStorage.setItem(ROUTE_BLUR_DISABLED_KEY, "1");
+    routeBlurOverlay.value = false;
   } else {
-    localStorage.removeItem(ROUTE_BLUR_DISABLED_KEY)
+    localStorage.removeItem(ROUTE_BLUR_DISABLED_KEY);
   }
-  webNotice.value = 'บันทึกการตั้งค่าเว็บแล้ว'
-}
+  webNotice.value = "บันทึกการตั้งค่าเว็บแล้ว";
+};
 
 const clearChatDisplayName = () => {
-  if (!import.meta.client) return
-  localStorage.removeItem(CHAT_DISPLAY_NAME_KEY)
-  webNotice.value = 'ล้างชื่อในแชทบอทแล้ว — เปิดแชทครั้งถัดไปจะถามชื่อใหม่'
-}
+  if (!import.meta.client) return;
+  localStorage.removeItem(CHAT_DISPLAY_NAME_KEY);
+  webNotice.value = "ล้างชื่อในแชทบอทแล้ว — เปิดแชทครั้งถัดไปจะถามชื่อใหม่";
+};
 
 const onLogout = () => {
-  logout()
-  router.push('/login')
-}
+  logout();
+  router.push("/login");
+};
 
 const saveProfile = () => {
   updateProfile({
     name: form.name,
     houseNo: form.houseNo,
     avatar: form.avatar,
-  })
-  notice.value = 'บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว'
-}
+  });
+  notice.value = "บันทึกข้อมูลโปรไฟล์เรียบร้อยแล้ว";
+};
 
 const onAvatarSelect = async (event: Event) => {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
 
   // เก็บเป็น base64 เพื่อใช้งานใน localStorage ได้ทันที
   const toBase64 = (blob: File) =>
     new Promise<string>((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
-      reader.onerror = () => reject(new Error('ไม่สามารถอ่านไฟล์รูปได้'))
-      reader.readAsDataURL(blob)
-    })
+      const reader = new FileReader();
+      reader.onload = () =>
+        resolve(typeof reader.result === "string" ? reader.result : "");
+      reader.onerror = () => reject(new Error("ไม่สามารถอ่านไฟล์รูปได้"));
+      reader.readAsDataURL(blob);
+    });
 
   try {
-    form.avatar = await toBase64(file)
+    form.avatar = await toBase64(file);
   } catch {
-    notice.value = 'อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
+    notice.value = "อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
   }
-}
+};
 </script>
