@@ -1,71 +1,8 @@
 <template>
   <div
-    class="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-slate-100 px-4 pb-32 pt-6 text-slate-900"
+    class="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-slate-100 px-4 pb-32 pt-2 text-slate-900"
   >
     <div class="mx-auto w-full max-w-md space-y-4">
-      <div class="flex items-center gap-3 px-1 pt-1">
-        <button
-          type="button"
-          class="relative h-11 w-11 shrink-0 overflow-hidden rounded-full ring-1 ring-black/10 transition active:scale-95"
-          @click="goProfile"
-        >
-          <img
-            src="https://api.dicebear.com/9.x/initials/svg?seed=Water%20User"
-            alt="profile"
-            class="h-full w-full object-cover"
-          />
-        </button>
-
-        <div class="min-w-0 flex-1">
-          <p class="text-[11px] leading-none text-slate-500">
-            {{ todayLabel }}
-          </p>
-          <h1
-            class="mt-1 truncate text-base font-bold leading-tight tracking-tight text-slate-900"
-          >
-            สวัสดี,
-            <span class="font-medium text-slate-600">{{ displayName }}</span>
-          </h1>
-        </div>
-
-        <button
-          ref="cartIconRef"
-          type="button"
-          class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-all active:scale-95"
-          :class="[
-            cartCount > 0
-              ? 'bg-black text-white shadow-lg'
-              : 'bg-white text-slate-700 ring-1 ring-black/10 hover:ring-black/20',
-            { 'cart-pulse': cartPulse },
-          ]"
-          aria-label="เปิดตะกร้า"
-          @click="goCart"
-        >
-          <svg
-            class="h-5 w-5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <circle cx="9" cy="21" r="1" />
-            <circle cx="20" cy="21" r="1" />
-            <path
-              d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
-            />
-          </svg>
-          <span
-            v-if="cartCount > 0"
-            class="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-slate-100 bg-white px-0.5 text-[10px] font-bold leading-none text-black"
-          >
-            {{ cartCount > 9 ? "9+" : cartCount }}
-          </span>
-        </button>
-      </div>
-
       <div
         class="rounded-3xl bg-white p-5 text-slate-900 shadow-[0_8px_28px_-12px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.03]"
       >
@@ -283,6 +220,7 @@
 import { WATER_CATALOG } from "~/composables/useLocalWatershop";
 
 definePageMeta({
+  layout: "user",
   middleware: "auth",
 });
 
@@ -297,31 +235,6 @@ type ReceiptItem = {
 const RECEIPTS_STORAGE_KEY = "watershop-receipts";
 
 const router = useRouter();
-const { user } = useAuth();
-
-const todayLabel = computed(() => {
-  try {
-    return new Intl.DateTimeFormat("th-TH", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    }).format(new Date());
-  } catch {
-    return "";
-  }
-});
-
-const displayName = computed(() => {
-  const email = user.value?.email ?? "";
-  const local = email.split("@")[0] ?? "";
-  if (!local) return "ผู้ใช้";
-  const cleaned = local.replace(/[-_.]+/g, " ").trim();
-  if (!cleaned) return "ผู้ใช้";
-  return cleaned
-    .split(" ")
-    .map((part) => (part ? part[0]!.toUpperCase() + part.slice(1) : part))
-    .join(" ");
-});
 
 const shop = useLocalWatershop();
 const {
@@ -443,10 +356,6 @@ const isToday = (timestamp: string) => {
   );
 };
 
-const goProfile = () => {
-  router.push("/user/profile");
-};
-
 const goCart = () => {
   router.push("/user/cart");
 };
@@ -488,12 +397,9 @@ const decrementQuantity = (itemId: string) => {
   updateOrderQuantity(itemId, Math.max(1, current - 1));
 };
 
-const cartIconRef = ref<HTMLElement | null>(null);
-const cartPulse = ref(false);
-
 const flyToCart = (sourceEl: HTMLElement, imageSrc: string) => {
   if (!import.meta.client) return;
-  const cartEl = cartIconRef.value;
+  const cartEl = document.querySelector("[data-user-cart-icon]") as HTMLElement | null;
   if (!cartEl || !sourceEl) return;
 
   const productCard = sourceEl.closest(
@@ -540,11 +446,11 @@ const flyToCart = (sourceEl: HTMLElement, imageSrc: string) => {
 
   window.setTimeout(() => {
     ghost.remove();
-    cartPulse.value = false;
+    cartEl.classList.remove("cart-pulse");
     void cartEl.offsetWidth;
-    cartPulse.value = true;
+    cartEl.classList.add("cart-pulse");
     window.setTimeout(() => {
-      cartPulse.value = false;
+      cartEl.classList.remove("cart-pulse");
     }, 420);
   }, 720);
 };
@@ -579,24 +485,3 @@ const onOrder = (itemId: string, event?: MouseEvent) => {
   }
 };
 </script>
-
-<style scoped>
-.cart-pulse {
-  animation: cart-bounce 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes cart-bounce {
-  0% {
-    transform: scale(1);
-  }
-  40% {
-    transform: scale(1.22);
-  }
-  70% {
-    transform: scale(0.94);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-</style>

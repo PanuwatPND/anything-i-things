@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#ececec] px-4 pb-32 pt-6 text-slate-900">
+  <div class="min-h-screen bg-[#ececec] px-4 pb-32 pt-2 text-slate-900">
     <div class="mx-auto w-full max-w-md space-y-4">
       <div class="rounded-[2rem] bg-white p-4 shadow-[0_18px_40px_rgba(0,0,0,0.12)]">
         <p class="text-xs text-slate-500">Billing</p>
@@ -68,6 +68,7 @@
 
 <script setup lang="ts">
 definePageMeta({
+  layout: "user",
   middleware: 'auth',
 })
 
