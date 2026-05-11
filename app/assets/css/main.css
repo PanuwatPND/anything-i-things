@@ -1,0 +1,45 @@
+.page-enter-active,
+.page-leave-active {
+  transition: all 0.35s ease;
+}
+
+.page-enter-from,
+.page-leave-to {
+  opacity: 0.35;
+  transform: translateY(4px) scale(0.998);
+}
+
+.float-in {
+  animation: floatIn 0.6s ease both;
+}
+
+.soft-pop {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.soft-pop:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 32px rgba(0, 0, 0, 0.14);
+}
+
+.no-spin::-webkit-outer-spin-button,
+.no-spin::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.no-spin[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+@keyframes floatIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
