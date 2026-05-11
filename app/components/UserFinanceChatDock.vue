@@ -75,7 +75,7 @@
                 draggable="false"
               />
               <p class="truncate text-sm font-semibold text-slate-800">
-                แชท (บอทเก้ท)
+                แชท (ลุคซาเก้ท)
               </p>
             </div>
             <button
@@ -98,6 +98,7 @@
           </div>
 
           <div
+            ref="chatScrollRef"
             class="min-h-[7.5rem] flex-1 overflow-y-auto bg-slate-100/50 px-3 py-2"
           >
             <ul class="space-y-2">
@@ -110,7 +111,14 @@
                     : 'mr-8 rounded-2xl rounded-bl-md bg-white px-3 py-2 text-[13px] leading-snug text-slate-800 ring-1 ring-slate-200/80'
                 "
               >
-                {{ m.text }}
+                <span class="whitespace-pre-wrap">{{ m.text }}</span>
+              </li>
+              <li
+                v-if="botTyping"
+                class="mr-8 rounded-2xl rounded-bl-md bg-white px-3 py-2.5 text-[13px] leading-snug text-slate-500 ring-1 ring-slate-200/80"
+                aria-live="polite"
+              >
+                <span class="typing-placeholder font-medium">...กำลังพิมพ์</span>
               </li>
             </ul>
           </div>
@@ -126,7 +134,8 @@
                 id="finance-chat-input"
                 v-model="message"
                 rows="3"
-                class="block w-full resize-none bg-transparent px-3 pb-12 pt-2.5 text-[15px] leading-relaxed text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-0"
+                :disabled="isBusy"
+                class="block w-full resize-none bg-transparent px-3 pb-12 pt-2.5 text-[15px] leading-relaxed text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-0 disabled:opacity-50"
                 :placeholder="placeholder"
                 @keydown.enter.exact.prevent="submit"
               />
@@ -134,7 +143,7 @@
                 <button
                   type="button"
                   class="grid h-9 w-9 place-items-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-95 disabled:opacity-40"
-                  :disabled="recognizing || !speechSupported"
+                  :disabled="isBusy || recognizing || !speechSupported"
                   :title="
                     speechSupported
                       ? 'พูดเพื่อพิมพ์'
@@ -159,8 +168,9 @@
                 </button>
                 <button
                   type="button"
-                  class="grid h-9 w-9 place-items-center rounded-full bg-black text-white shadow-md ring-1 ring-black/20 transition hover:bg-neutral-900 active:scale-95"
+                  class="grid h-9 w-9 place-items-center rounded-full bg-black text-white shadow-md ring-1 ring-black/20 transition hover:bg-neutral-900 active:scale-95 disabled:opacity-40"
                   aria-label="ส่งข้อความ"
+                  :disabled="isBusy"
                   @click="submit"
                 >
                   <svg
@@ -232,21 +242,37 @@ const dockBottom = computed(() =>
 
 const chatFabSrc = "/chat-fab-icon.png";
 
+const CHAT_DISPLAY_NAME_KEY = "lunarwater-chat-display-name";
+
 const open = ref(false);
 const message = ref("");
 const hint = ref("");
 const recognizing = ref(false);
+const botTyping = ref(false);
+const chatScrollRef = ref<HTMLElement | null>(null);
+const chatUserName = ref("");
 
-type ChatMsg = { id: string; text: string; from: "user" | "system" };
+const isBusy = computed(() => botTyping.value);
+
+type ChatMsg = { id: string; text: string; from: "user" | "system" | "assistant" };
 const messages = ref<ChatMsg[]>([
   {
     id: "welcome",
-    text: "สวัสดี สามารถสั่งผ่านแชทบอทได้เลยครับ",
+    text: "",
     from: "system",
   },
 ]);
 
-const placeholder = "พิมพ์ข้อความ…";
+const buildWelcomeText = () => {
+  if (chatUserName.value) {
+    return `สวัสดี คุณ${chatUserName.value}! เราคือบอทลุคซาเก้ท พร้อมช่วยเรื่องสั่งน้ำ บิล และตะกร้า — ถามได้เลยนะ`;
+  }
+  return "สวัสดี! เราคือบอทลุคซาเก้ทนะ มาช่วยดูแลเรื่องสั่งน้ำในแอปนี้\nขอชื่อเล่นของคุณหน่อยได้ไหม จะได้ทักถูกคน~";
+};
+
+const placeholder = computed(() =>
+  chatUserName.value ? "พิมพ์ข้อความ…" : "พิมพ์ชื่อเล่นของคุณ…",
+);
 
 let recognition: SpeechRecognitionInstance | null = null;
 
@@ -266,22 +292,161 @@ const showHint = (text: string) => {
   }, 2200);
 };
 
-const submit = () => {
+const scrollChatToEnd = () => {
+  const el = chatScrollRef.value;
+  if (!el) return;
+  el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+};
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** ให้ Vue + เบราว์เซอร์ทันวาดแถบกำลังพิมพ์ก่อนไปทำงานหนักต่อ */
+const yieldPaint = () =>
+  new Promise<void>((resolve) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve());
+    });
+  });
+
+/** แบบ IG: แสดงแถบกำลังพิมพ์ แล้วค่อยใส่ข้อความเต็มทีเดียว */
+const withTypingIndicator = async (
+  reveal: () => void,
+  minPauseMs = 520,
+  maxPauseMs = 1200,
+) => {
+  botTyping.value = true;
+  await nextTick();
+  await yieldPaint();
+  scrollChatToEnd();
+  await sleep(minPauseMs + Math.random() * (maxPauseMs - minPauseMs));
+  reveal();
+  botTyping.value = false;
+  await nextTick();
+  scrollChatToEnd();
+};
+
+/** ระหว่างรอ API ให้เห็น ...กำลังพิมพ์ อย่างน้อย minMs (กันตอบเร็วจนไม่ทันวาด) */
+const CHAT_TYPING_MIN_MS = 520;
+
+const fetchChatReplyWithTyping = async (
+  turns: { role: "user" | "assistant"; content: string }[],
+) => {
+  botTyping.value = true;
+  await nextTick();
+  await yieldPaint();
+  scrollChatToEnd();
+  const started = Date.now();
+  try {
+    const { reply } = await $fetch<{ reply: string }>("/api/chat", {
+      method: "POST",
+      body: {
+        messages: turns,
+        userName: chatUserName.value,
+      },
+    });
+    const elapsed = Date.now() - started;
+    if (elapsed < CHAT_TYPING_MIN_MS) {
+      await sleep(CHAT_TYPING_MIN_MS - elapsed);
+    }
+    const out = (reply || "").trim() || "ไม่มีคำตอบจากบอทครับ";
+    botTyping.value = false;
+    await nextTick();
+    messages.value.push({
+      id: `a-${Date.now()}`,
+      text: out,
+      from: "assistant",
+    });
+    await nextTick();
+    scrollChatToEnd();
+  } catch {
+    const elapsed = Date.now() - started;
+    if (elapsed < CHAT_TYPING_MIN_MS) {
+      await sleep(CHAT_TYPING_MIN_MS - elapsed);
+    }
+    botTyping.value = false;
+    await nextTick();
+    messages.value.push({
+      id: `a-${Date.now()}`,
+      text: "ขออภัย ตอนนี้เชื่อมบอทไม่สำเร็จ ลองใหม่นะครับ",
+      from: "assistant",
+    });
+    await nextTick();
+    scrollChatToEnd();
+  }
+};
+
+const submit = async () => {
   const text = message.value.trim();
   if (!text) {
-    showHint("พิมพ์ข้อความก่อนนะ");
+    showHint(chatUserName.value ? "พิมพ์ข้อความก่อนนะ" : "พิมพ์ชื่อเล่นก่อนนะ");
     return;
   }
+  if (isBusy.value) return;
+
+  if (!chatUserName.value) {
+    const nameGuess = text.replace(/^\s*ชื่อ\s*/i, "").trim().slice(0, 40);
+    if (!nameGuess) {
+      showHint("พิมพ์ชื่อเล่นก่อนนะ");
+      return;
+    }
+    messages.value.push({
+      id: `u-${Date.now()}`,
+      text,
+      from: "user",
+    });
+    message.value = "";
+    chatUserName.value = nameGuess;
+    if (import.meta.client) {
+      localStorage.setItem(CHAT_DISPLAY_NAME_KEY, nameGuess);
+    }
+    await nextTick();
+    scrollChatToEnd();
+    const ack = `ยินดีที่ได้รู้จักเลยครับ คุณ${nameGuess} — ลุคซาเก้ทจำชื่อไว้แล้วนะ ถามเรื่องสั่งน้ำ บิล หรือตะกร้าได้เลย`;
+    await withTypingIndicator(() => {
+      messages.value.push({
+        id: `a-${Date.now()}`,
+        text: ack,
+        from: "assistant",
+      });
+    }, 560, 1300);
+    return;
+  }
+
   messages.value.push({
     id: `u-${Date.now()}`,
     text,
     from: "user",
   });
   message.value = "";
-  if (import.meta.dev) {
-    console.info("[chat-dock]", text);
-  }
+  await nextTick();
+  scrollChatToEnd();
+
+  const turns = messages.value
+    .filter((m) => m.from === "user" || m.from === "assistant")
+    .map((m) => ({
+      role: m.from === "user" ? ("user" as const) : ("assistant" as const),
+      content: m.text,
+    }));
+
+  await fetchChatReplyWithTyping(turns);
 };
+
+onMounted(async () => {
+  if (!import.meta.client) return;
+  try {
+    const stored = localStorage.getItem(CHAT_DISPLAY_NAME_KEY);
+    if (stored) chatUserName.value = stored.trim().slice(0, 40);
+  } catch {
+    /* ignore */
+  }
+  const welcome = messages.value[0];
+  if (welcome?.id === "welcome" && welcome.text === "") {
+    const full = buildWelcomeText();
+    await withTypingIndicator(() => {
+      welcome.text = full;
+    }, 480, 1100);
+  }
+});
 
 const toggleVoice = () => {
   if (!import.meta.client || !speechSupported.value) return;
@@ -350,5 +515,18 @@ onUnmounted(() => {
 .chat-backdrop-enter-from,
 .chat-backdrop-leave-to {
   opacity: 0;
+}
+
+.typing-placeholder {
+  animation: typing-placeholder-pulse 1.1s ease-in-out infinite;
+}
+@keyframes typing-placeholder-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 </style>
