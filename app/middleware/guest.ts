@@ -12,6 +12,6 @@ export default defineNuxtRouteMiddleware(() => {
       return navigateTo('/admin')
     }
 
-    return navigateTo('/user')
+    return navigateTo('/user/water')
   }
 })

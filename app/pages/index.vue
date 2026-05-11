@@ -22,7 +22,7 @@ onMounted(async () => {
   if (user.value.role === 'admin') {
     await navigateTo('/admin')
   } else {
-    await navigateTo('/user')
+    await navigateTo('/user/water')
   }
 })
 </script>

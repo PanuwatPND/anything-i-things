@@ -17,6 +17,6 @@ export default defineNuxtRouteMiddleware((to) => {
   }
 
   if (user.value?.role === 'user' && to.path === '/') {
-    return navigateTo('/user')
+    return navigateTo('/user/water')
   }
 })
