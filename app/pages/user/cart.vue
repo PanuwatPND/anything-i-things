@@ -65,8 +65,6 @@
           <span class="text-2xl font-bold">{{ totalAmount }} ฿</span>
         </div>
 
-        <p v-if="message" class="mb-3 rounded-xl bg-black px-3 py-2 text-xs text-white">{{ message }}</p>
-
         <button
           class="w-full rounded-xl bg-black px-4 py-2.5 font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:bg-slate-300"
           :disabled="cartItems.length === 0 || isCheckingOut"
@@ -83,6 +81,7 @@
 
 <script setup lang="ts">
 import { WATER_CATALOG } from '~/composables/useLocalWatershop'
+import Swal from 'sweetalert2'
 
 definePageMeta({
   middleware: 'auth',
@@ -119,7 +118,6 @@ const {
   totalBottles,
 } = shop
 const isCheckingOut = ref(false)
-const message = ref('')
 
 if (import.meta.client) {
   hydrateShop()
@@ -135,8 +133,44 @@ const onQtyChange = (id: string, event: Event) => {
   updateQuantity(id, value)
 }
 
+const topRightToast = Swal.mixin({
+  toast: true,
+  position: 'top-end',
+  showConfirmButton: false,
+  timer: 1800,
+  timerProgressBar: true,
+  customClass: {
+    popup: 'watershop-toast',
+    title: 'watershop-toast-title',
+    timerProgressBar: 'watershop-toast-progress',
+  },
+})
+
 const checkout = async () => {
-  message.value = ''
+  const confirmation = await Swal.fire({
+    title: 'ยืนยันการสั่งซื้อ',
+    text: `ต้องการยืนยันออเดอร์ ${totalCount.value} รายการ (${totalAmount.value} ฿) ใช่ไหม`,
+    icon: 'question',
+    iconColor: '#0f172a',
+    position: 'center',
+    width: 360,
+    padding: '1rem',
+    showCancelButton: true,
+    confirmButtonText: 'ยืนยัน',
+    cancelButtonText: 'ยกเลิก',
+    buttonsStyling: false,
+    customClass: {
+      popup: 'watershop-confirm',
+      title: 'watershop-confirm-title',
+      htmlContainer: 'watershop-confirm-text',
+      confirmButton: 'watershop-confirm-btn watershop-confirm-btn-primary',
+      cancelButton: 'watershop-confirm-btn watershop-confirm-btn-secondary',
+      icon: 'watershop-confirm-icon',
+    },
+    reverseButtons: true,
+  })
+  if (!confirmation.isConfirmed) return
+
   isCheckingOut.value = true
 
   try {
@@ -168,12 +202,112 @@ const checkout = async () => {
     }
 
     clearCart()
-    message.value = 'สั่งซื้อสำเร็จแล้ว'
-    setTimeout(() => router.push('/user'), 500)
+    await topRightToast.fire({
+      icon: 'success',
+      title: 'สั่งซื้อสำเร็จ',
+      text: 'ระบบบันทึกบิลเรียบร้อยแล้ว',
+    })
+    await router.push('/user/bills')
   } catch (error) {
-    message.value = error instanceof Error ? error.message : 'สั่งซื้อไม่สำเร็จ'
+    await topRightToast.fire({
+      text: error instanceof Error ? error.message : 'เกิดข้อผิดพลาด กรุณาลองอีกครั้ง',
+      icon: 'error',
+      title: 'สั่งซื้อไม่สำเร็จ',
+      timer: 2400,
+    })
   } finally {
     isCheckingOut.value = false
   }
 }
 </script>
+
+<style scoped>
+:global(.swal2-popup.watershop-confirm) {
+  border-radius: 1.25rem;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 46px rgba(15, 23, 42, 0.24);
+  margin-top: -5.25rem !important;
+}
+
+:global(.swal2-title.watershop-confirm-title) {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+:global(.swal2-html-container.watershop-confirm-text) {
+  margin-top: 0.4rem;
+  color: #64748b;
+  font-size: 0.84rem;
+}
+
+:global(.swal2-icon.watershop-confirm-icon) {
+  margin-top: 0.2rem;
+  margin-bottom: 0.1rem;
+}
+
+:global(.swal2-actions) {
+  gap: 0.55rem;
+}
+
+:global(button.watershop-confirm-btn) {
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0.8rem !important;
+  min-width: 88px !important;
+  padding: 0.48rem 0.85rem !important;
+  font-size: 0.82rem !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+:global(button.watershop-confirm-btn:focus) {
+  box-shadow: none !important;
+}
+
+:global(button.watershop-confirm-btn-primary) {
+  background: #0f172a !important;
+  border: 1px solid #0f172a !important;
+  color: #ffffff !important;
+}
+
+:global(button.watershop-confirm-btn-secondary) {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+:global(.swal2-popup.watershop-toast) {
+  border-radius: 0.95rem;
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+}
+
+:global(.swal2-title.watershop-toast-title) {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+:global(.swal2-popup.watershop-toast .swal2-html-container) {
+  font-size: 0.78rem !important;
+  color: #64748b;
+}
+
+:global(.swal2-timer-progress-bar.watershop-toast-progress) {
+  background: linear-gradient(90deg, #0f172a, #334155);
+}
+
+:global(.swal2-popup.watershop-toast .swal2-icon.swal2-success) {
+  border-color: rgba(5, 150, 105, 0.4) !important;
+  color: #059669 !important;
+}
+
+:global(.swal2-popup.watershop-toast .swal2-icon.swal2-error) {
+  border-color: rgba(220, 38, 38, 0.35) !important;
+  color: #dc2626 !important;
+}
+</style>
