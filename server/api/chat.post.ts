@@ -29,7 +29,7 @@ function localReplyTh(userText: string, userName: string): string {
     return "พิมพ์คำถามเพิ่มนิดได้ไหมครับ ลุคซาเก้ทจะได้ช่วยตอบให้ตรงจุดขึ้น";
   }
   const greet = userName ? `คุณ${userName} ` : "";
-  return `${greet}ตอนนี้เราตอบแบบจำกัดครับ ลองถามเรื่องสั่งน้ำ บิล หรือตะกร้าได้ — ตอนนี้รอคุณ POND เตรียมระบบก่อนนะครับ`;
+  return `${greet}ตอนนี้ผมตอบแบบจำกัดครับ ลองถามเรื่องสั่งน้ำ บิล หรือตะกร้าได้ — ตอนนี้รอคุณ POND เตรียมระบบก่อนนะครับ`;
 }
 
 type ChatBody = { messages?: ChatTurn[]; userName?: string };

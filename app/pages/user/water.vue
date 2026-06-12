@@ -31,7 +31,9 @@
               <div class="mb-1 flex items-center justify-between text-xs">
                 <span class="text-slate-500">จำนวนครั้ง / ใบเสร็จ</span>
                 <span class="font-semibold tabular-nums text-slate-900">
-                  <span class="text-sm">{{ formatInt(todayReceiptCount) }}</span>
+                  <span class="text-sm">{{
+                    formatInt(todayReceiptCount)
+                  }}</span>
                   <span class="text-slate-400"> /{{ formatInt(20) }}</span>
                 </span>
               </div>
@@ -92,6 +94,9 @@
         <p class="mt-2 text-xs text-slate-500">
           เลือกจำนวนจากปุ่ม + / - แล้วกดเพิ่มลงตะกร้าได้ทันที
         </p>
+        <div>
+          <p class="text-[11px] text-slate-400">!!! โปรโมชัน 3 แพ็ค 100 ฿</p>
+        </div>
         <div class="mt-4 space-y-3">
           <div
             v-for="item in catalogItems"
@@ -116,10 +121,7 @@
                 <p class="truncate font-semibold text-slate-900">
                   {{ item.name }}
                 </p>
-                <p class="text-xs text-slate-500">
-                  1 แพ็ค = {{ formatInt(item.bottlesPerPack) }} ขวด · {{ formatInt(item.price) }} ฿
-                </p>
-                <p class="text-[11px] text-slate-400">โปรโมชัน 3 แพ็ค 100 ฿</p>
+
                 <p
                   class="mt-0.5 text-[11px]"
                   :class="
@@ -198,7 +200,8 @@
             </button>
           </div>
           <p class="mt-1 text-xs text-slate-500">
-            {{ formatInt(cartCount) }} รายการ · {{ formatInt(cartTotalAmount) }} ฿
+            {{ formatInt(cartCount) }} รายการ ·
+            {{ formatInt(cartTotalAmount) }} ฿
           </p>
           <ul class="mt-2 space-y-1.5 text-sm text-slate-800">
             <li
@@ -207,7 +210,9 @@
               class="flex justify-between gap-2"
             >
               <span class="min-w-0 truncate">{{ line.name }}</span>
-              <span class="shrink-0 text-slate-500">×{{ formatInt(line.quantity) }}</span>
+              <span class="shrink-0 text-slate-500"
+                >×{{ formatInt(line.quantity) }}</span
+              >
             </li>
           </ul>
         </div>
@@ -402,7 +407,9 @@ const decrementQuantity = (itemId: string) => {
 
 const flyToCart = (sourceEl: HTMLElement, imageSrc: string) => {
   if (!import.meta.client) return;
-  const cartEl = document.querySelector("[data-user-cart-icon]") as HTMLElement | null;
+  const cartEl = document.querySelector(
+    "[data-user-cart-icon]",
+  ) as HTMLElement | null;
   if (!cartEl || !sourceEl) return;
 
   const productCard = sourceEl.closest(

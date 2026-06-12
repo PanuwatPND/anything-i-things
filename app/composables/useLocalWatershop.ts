@@ -32,7 +32,7 @@ export const WATER_CATALOG: DrinkItem[] = [
   },
   {
     id: 'water-1500ml',
-    name: 'น้ำดื่ม 1.5 ลิตร',
+    name: 'น้ำดื่ม 1500 ml',
     price: 35,
     stock: 60,
     image: '/products/water-bottle.png',

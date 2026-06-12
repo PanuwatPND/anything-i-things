@@ -97,6 +97,10 @@
 </template>
 
 <script setup lang="ts">
+import {
+  RECEIPTS_STORAGE_KEY,
+  type WatershopReceipt,
+} from "~/composables/useWatershopReceipts";
 import { WATER_CATALOG } from "~/composables/useLocalWatershop";
 import Swal from "sweetalert2";
 
@@ -109,16 +113,6 @@ const imageOf = (id: string) =>
   WATER_CATALOG.find((d) => d.id === id)?.image ?? "/products/water-bottle.png";
 const bottlesOf = (id: string) =>
   WATER_CATALOG.find((d) => d.id === id)?.bottlesPerPack ?? 6;
-
-type ReceiptItem = {
-  id: string;
-  itemName: string;
-  quantity: number;
-  amount: number;
-  createdAt: string;
-};
-
-const RECEIPTS_STORAGE_KEY = "watershop-receipts";
 
 const router = useRouter();
 const { formatInt } = useFormatNumber();
@@ -210,7 +204,7 @@ const checkout = async () => {
         ? orderedItems[0]!.name
         : `ออเดอร์รวม ${formatInt(orderedItems.length)} รายการ`;
 
-    const newReceipts: ReceiptItem[] = [];
+    const newReceipts: WatershopReceipt[] = [];
     for (const cartItem of orderedItems) {
       placeOrder(cartItem.id, cartItem.quantity);
     }
@@ -225,7 +219,7 @@ const checkout = async () => {
 
     if (import.meta.client) {
       const raw = localStorage.getItem(RECEIPTS_STORAGE_KEY);
-      const currentReceipts = raw ? (JSON.parse(raw) as ReceiptItem[]) : [];
+      const currentReceipts = raw ? (JSON.parse(raw) as WatershopReceipt[]) : [];
       localStorage.setItem(
         RECEIPTS_STORAGE_KEY,
         JSON.stringify([...newReceipts, ...currentReceipts]),

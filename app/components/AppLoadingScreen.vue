@@ -46,7 +46,7 @@ const props = withDefaults(
     complete?: boolean;
   }>(),
   {
-    message: "กำลังเตรียมหน้าถัดไป...",
+    message: "กำลังโหลดข้อมูล...",
     logoSrc: "/loading_app.png",
     brandText: "LunarWater",
     complete: false,

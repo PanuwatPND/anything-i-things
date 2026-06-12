@@ -5,6 +5,10 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss'],
   runtimeConfig: {
     openaiApiKey: '',
+    /** Google AI Studio / Gemini API key (เซิร์ฟเวอร์เท่านั้น — ตั้งใน .env เป็น NUXT_GEMINI_API_KEY) */
+    geminiApiKey: '',
+    /** โมเดล Vision สำหรับอ่านสลิป (override ด้วย NUXT_GEMINI_MODEL) */
+    geminiModel: 'gemini-2.5-flash',
   },
   css: ['~/assets/css/main.css'],
   app: {
