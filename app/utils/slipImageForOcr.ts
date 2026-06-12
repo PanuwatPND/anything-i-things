@@ -45,6 +45,34 @@ export async function slipImagePartsForOcr(
   }
 }
 
+/** resize จาก data URL ที่เก็บไว้แล้ว (ใช้ใน payment page ตอนยืนยันสลิป) */
+export async function slipImagePartsFromDataUrl(
+  dataUrl: string,
+): Promise<SlipImageParts | null> {
+  if (!import.meta.client) return null;
+  try {
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject();
+      img.src = dataUrl;
+    });
+    const longEdge = Math.max(img.width, img.height);
+    const scale = longEdge > SLIP_OCR_MAX_EDGE ? SLIP_OCR_MAX_EDGE / longEdge : 1;
+    const w = Math.max(1, Math.round(img.width * scale));
+    const h = Math.max(1, Math.round(img.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, w, h);
+    return parseDataUrlBase64(canvas.toDataURL("image/jpeg", SLIP_OCR_JPEG_QUALITY));
+  } catch {
+    return null;
+  }
+}
+
 export function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

@@ -218,7 +218,6 @@
         </div>
       </div>
 
-      <UserTabBar />
     </div>
   </div>
 </template>
@@ -230,16 +229,6 @@ definePageMeta({
   layout: "user",
   middleware: "auth",
 });
-
-type ReceiptItem = {
-  id: string;
-  itemName: string;
-  quantity: number;
-  amount: number;
-  createdAt: string;
-};
-
-const RECEIPTS_STORAGE_KEY = "watershop-receipts";
 
 const router = useRouter();
 const { formatInt } = useFormatNumber();
@@ -253,8 +242,8 @@ const {
   ensureCatalog,
   addItem,
 } = shop;
+const { receipts, loadReceipts } = useWatershopReceipts();
 const orderQuantities = ref<Record<string, number>>({});
-const receipts = ref<ReceiptItem[]>([]);
 
 /** แสดง 2 รายการเสมอ — ดึงสต็อกจาก state ถ้ามี */
 const catalogItems = computed(() =>
@@ -350,8 +339,7 @@ const gaugeOptions = computed(() => ({
 if (import.meta.client) {
   hydrateShop();
   ensureCatalog();
-  const raw = localStorage.getItem(RECEIPTS_STORAGE_KEY);
-  receipts.value = raw ? (JSON.parse(raw) as ReceiptItem[]) : [];
+  loadReceipts();
 }
 
 const isToday = (timestamp: string) => {

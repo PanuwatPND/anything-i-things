@@ -264,7 +264,6 @@
         ซ่อนการแก้ไข
       </button>
 
-      <UserTabBar />
     </div>
   </div>
 </template>
@@ -275,11 +274,6 @@ definePageMeta({
   middleware: "auth",
 });
 
-type ReceiptItem = {
-  amount: number;
-};
-
-const RECEIPTS_STORAGE_KEY = "watershop-receipts";
 const DEFAULT_AVATAR = "/default-avatar.png";
 const ROUTE_BLUR_DISABLED_KEY = "watershop-disable-route-blur";
 /** ต้องตรงกับ UserFinanceChatDock.vue */
@@ -288,7 +282,7 @@ const CHAT_DISPLAY_NAME_KEY = "lunarwater-chat-display-name";
 const router = useRouter();
 const { formatInt } = useFormatNumber();
 const { user, logout, updateProfile } = useAuth();
-const receipts = ref<ReceiptItem[]>([]);
+const { receipts, loadReceipts } = useWatershopReceipts();
 const totalSpend = computed(() =>
   receipts.value.reduce((sum, receipt) => sum + receipt.amount, 0),
 );
@@ -307,8 +301,7 @@ const avatarPreview = computed(() => form.avatar || DEFAULT_AVATAR);
 const displayName = computed(() => user.value?.name || "ผู้ใช้งานทั่วไป");
 
 if (import.meta.client) {
-  const raw = localStorage.getItem(RECEIPTS_STORAGE_KEY);
-  receipts.value = raw ? (JSON.parse(raw) as ReceiptItem[]) : [];
+  loadReceipts();
   disableRouteBlur.value =
     localStorage.getItem(ROUTE_BLUR_DISABLED_KEY) === "1";
 }

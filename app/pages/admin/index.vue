@@ -559,12 +559,6 @@ import {
   slipImagePartsForOcr,
 } from "~/utils/slipImageForOcr";
 
-type GeminiSlipReadResult = {
-  amountBaht: number | null;
-  payerHint: string | null;
-  confidence: number;
-};
-
 definePageMeta({
   middleware: "admin",
 });
@@ -582,6 +576,7 @@ const {
   updateSlipVerification,
 } = useWatershopReceipts();
 
+const { runOcr } = useSlipOcr();
 const activeTab = ref<"stock" | "slips" | "verify">("stock");
 const slipInputRef = ref<HTMLInputElement | null>(null);
 const pendingSlipReceiptId = ref<string | null>(null);
@@ -815,36 +810,7 @@ const onSlipFile = async (event: Event) => {
   }
 
   try {
-    const res = await $fetch<GeminiSlipReadResult>("/api/admin/slip-read", {
-      method: "POST",
-      body: {
-        imageBase64: imageParts.base64,
-        mimeType: imageParts.mimeType,
-        orderAmountHint: orderHint,
-      },
-    });
-
-    const patch: Partial<SlipVerification> = {
-      ocrConfidence: res.confidence,
-      ocrReadAt: new Date().toISOString(),
-    };
-
-    if (res.amountBaht != null) {
-      patch.amountOnSlip = res.amountBaht;
-      patch.amountFromOcr = true;
-      patch.ocrMessage = res.payerHint
-        ? ` ยอด ${formatInt(res.amountBaht)} ฿ · ${res.payerHint} `
-        : ` ยอด ${formatInt(res.amountBaht)} ฿ — โปรดตรวจกับภาพ`;
-    } else {
-      patch.amountFromOcr = false;
-      patch.ocrMessage = res.payerHint
-        ? ` ระบุผู้โอน (${res.payerHint}) — กรุณากรอกยอดมือในแท็บตรวจสอบ`
-        : " ไม่พบยอดที่ชัดเจนบนสลิป — กรุณากรอกยอดมือในแท็บตรวจสอบ";
-    }
-
-    if (res.payerHint) patch.payerHint = res.payerHint;
-
-    updateSlipVerification(receiptId, patch);
+    await runOcr(receiptId, imageParts, orderHint);
   } catch (err: unknown) {
     updateSlipVerification(receiptId, {
       ocrReadAt: new Date().toISOString(),

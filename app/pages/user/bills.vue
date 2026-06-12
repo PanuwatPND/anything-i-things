@@ -16,25 +16,19 @@
       <div
         class="rounded-[2rem] bg-white p-4 shadow-[0_16px_36px_rgba(0,0,0,0.1)]"
       >
-        <div class="mb-3 rounded-xl bg-slate-50 p-3">
-          <p class="text-[11px] font-semibold text-slate-500">
-            สถานะการสั่งซื้อ
-          </p>
-          <p class="mt-1 text-[11px] text-slate-500">
-            {{ FIXD_CODE.ORDER_FLOW_LABEL }}
-          </p>
-        </div>
         <div
-          v-if="receipts.length === 0"
+          v-if="orderedReceipts.length === 0"
           class="rounded-xl border border-dashed border-black/20 bg-slate-50 px-3 py-8 text-center text-sm text-slate-600"
         >
           ยังไม่มีบิล — สั่งซื้อจากตะกร้าแล้วจะแสดงที่นี่
         </div>
         <ul v-else class="space-y-2">
           <li
-            v-for="(r, idx) in orderedReceipts"
+            v-for="r in orderedReceipts"
             :key="r.id"
-            class="rounded-xl border border-black/10 bg-slate-50 p-3 text-sm"
+            class="rounded-xl border border-black/10 bg-slate-50 p-3 text-sm transition-all"
+            :class="{ 'cursor-pointer hover:bg-amber-50 hover:border-amber-200 active:scale-[0.99]': statusOf(r).code === 'pending' }"
+            @click="statusOf(r).code === 'pending' ? router.push(`/user/payment?id=${r.id}`) : undefined"
           >
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
@@ -44,20 +38,27 @@
                   {{ formatInt(r.quantity) }} ชิ้น
                 </p>
                 <button
-                  v-if="statusOf(idx).code === 'shipping'"
+                  v-if="statusOf(r).code === 'shipping'"
                   type="button"
                   class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold underline underline-offset-2"
-                  :class="statusClass(statusOf(idx).code)"
-                  @click="openTracking(r)"
+                  :class="statusClass(statusOf(r).code)"
+                  @click.stop="openTracking(r)"
                 >
-                  {{ statusOf(idx).label }} · ดูแผนที่
+                  {{ statusOf(r).label }} · ดูแผนที่
                 </button>
+                <span
+                  v-else-if="statusOf(r).code === 'pending'"
+                  class="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                  :class="statusClass(statusOf(r).code)"
+                >
+                  {{ statusOf(r).label }} · กดเพื่อชำระ
+                </span>
                 <p
                   v-else
                   class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold"
-                  :class="statusClass(statusOf(idx).code)"
+                  :class="statusClass(statusOf(r).code)"
                 >
-                  {{ statusOf(idx).label }}
+                  {{ statusOf(r).label }}
                 </p>
               </div>
               <p class="shrink-0 font-semibold tabular-nums">
@@ -68,7 +69,6 @@
         </ul>
       </div>
 
-      <UserTabBar />
     </div>
   </div>
 
@@ -80,64 +80,28 @@
 </template>
 
 <script setup lang="ts">
+import {
+  type WatershopReceipt,
+  type BillStatusCode,
+  BILL_STATUS_LABEL,
+} from "~/composables/useWatershopReceipts";
+
 definePageMeta({
   layout: "user",
   middleware: "auth",
 });
 
-type ReceiptItem = {
-  id: string;
-  itemName: string;
-  quantity: number;
-  amount: number;
-  createdAt: string;
-};
-
-const RECEIPTS_STORAGE_KEY = "watershop-receipts";
-
+const router = useRouter();
 const { formatInt } = useFormatNumber();
-const receipts = ref<ReceiptItem[]>([]);
+const { orderedReceipts, loadReceipts } = useWatershopReceipts();
 const trackingOpen = ref(false);
 const trackingTitle = ref("รายการจัดส่ง");
-type BillStatusCode =
-  | "pending"
-  | "paid"
-  | "shipping"
-  | "delivered"
-  | "cancelled";
 
-const FIXD_CODE = {
-  ORDER_FLOW: [
-    "pending",
-    "paid",
-    "shipping",
-    "delivered",
-    "cancelled",
-  ] as const,
-  ORDER_FLOW_LABEL: "#exLR332",
-  STATUS_LABEL: {
-    pending: "รอชำระ",
-    paid: "ชำระแล้ว",
-    shipping: "กำลังดำเนินการจัดส่ง",
-    delivered: "จัดส่งสำเร็จ",
-    cancelled: "ยกเลิก",
-  } as const,
-} as const;
+onMounted(() => loadReceipts());
 
-const orderedReceipts = computed(() =>
-  [...receipts.value].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  ),
-);
-
-const statusOf = (index: number) => {
-  const code = FIXD_CODE.ORDER_FLOW[
-    index % FIXD_CODE.ORDER_FLOW.length
-  ] as BillStatusCode;
-  return {
-    code,
-    label: FIXD_CODE.STATUS_LABEL[code],
-  };
+const statusOf = (r: WatershopReceipt) => {
+  const code = (r.status ?? "pending") as BillStatusCode;
+  return { code, label: BILL_STATUS_LABEL[code] };
 };
 
 const statusClass = (code: BillStatusCode) => {
@@ -148,20 +112,10 @@ const statusClass = (code: BillStatusCode) => {
   return "bg-rose-100 text-rose-700";
 };
 
-const openTracking = (receipt: ReceiptItem) => {
+const openTracking = (receipt: WatershopReceipt) => {
   trackingTitle.value = receipt.itemName;
   trackingOpen.value = true;
 };
-
-const loadReceipts = () => {
-  if (!import.meta.client) return;
-  const raw = localStorage.getItem(RECEIPTS_STORAGE_KEY);
-  receipts.value = raw ? (JSON.parse(raw) as ReceiptItem[]) : [];
-};
-
-onMounted(() => {
-  loadReceipts();
-});
 
 const formatDate = (iso: string) => {
   try {

@@ -1,21 +1,29 @@
 export const RECEIPTS_STORAGE_KEY = "watershop-receipts";
 
+export type BillStatusCode =
+  | "pending"
+  | "paid"
+  | "shipping"
+  | "delivered"
+  | "cancelled";
+
+export const BILL_STATUS_LABEL: Record<BillStatusCode, string> = {
+  pending: "รอชำระ",
+  paid: "ชำระแล้ว",
+  shipping: "กำลังจัดส่ง",
+  delivered: "จัดส่งสำเร็จ",
+  cancelled: "ยกเลิก",
+};
+
 /** ข้อมูลการตรวจสลิป — ยอดอาจมาจาก Gemini Vision หรือพิมพ์มือ */
 export type SlipVerification = {
-  /** ยอดที่เห็นบนสลิป — จาก Gemini หรือพิมพ์มือ */
   amountOnSlip?: number;
-  /** เช่น ชื่อผู้โอน, ธนาคาร, เลขท้ายบัญชี */
   payerHint?: string;
-  /** หมายเหตุจากแอดมิน */
   note?: string;
   checkedAt?: string;
-  /** เวลาที่เรียก Gemini ล่าสุด */
   ocrReadAt?: string;
-  /** confidence จาก Gemini (0–100) */
   ocrConfidence?: number;
-  /** true เมื่อ amountOnSlip ล่าสุดมาจาก Gemini Vision */
   amountFromOcr?: boolean;
-  /** ข้อความสถานะจากระบบอ่านสลิป */
   ocrMessage?: string;
 };
 
@@ -25,7 +33,7 @@ export type WatershopReceipt = {
   quantity: number;
   amount: number;
   createdAt: string;
-  /** รูปสลิปโอน (data URL) — แนบได้จากหน้าแอดมิน */
+  status: BillStatusCode;
   slipDataUrl?: string;
   slipVerification?: SlipVerification;
 };
@@ -56,6 +64,20 @@ export const useWatershopReceipts = () => {
     ),
   );
 
+  const addReceipt = (receipt: WatershopReceipt) => {
+    if (!import.meta.client) return;
+    const raw = localStorage.getItem(RECEIPTS_STORAGE_KEY);
+    const current = raw ? (JSON.parse(raw) as WatershopReceipt[]) : [];
+    saveReceipts([receipt, ...current]);
+  };
+
+  const updateStatus = (receiptId: string, status: BillStatusCode) => {
+    const next = receipts.value.map((r) =>
+      r.id === receiptId ? { ...r, status } : r,
+    );
+    saveReceipts(next);
+  };
+
   const attachSlip = (receiptId: string, dataUrl: string) => {
     const next = receipts.value.map((r) =>
       r.id === receiptId ? { ...r, slipDataUrl: dataUrl } : r,
@@ -67,7 +89,7 @@ export const useWatershopReceipts = () => {
     const next = receipts.value.map((r) => {
       if (r.id !== receiptId) return r;
       const { slipDataUrl: _, slipVerification: __, ...rest } = r;
-      return rest;
+      return rest as WatershopReceipt;
     });
     saveReceipts(next);
   };
@@ -79,10 +101,7 @@ export const useWatershopReceipts = () => {
     const next = receipts.value.map((r) => {
       if (r.id !== receiptId) return r;
       const prev = r.slipVerification ?? {};
-      return {
-        ...r,
-        slipVerification: { ...prev, ...patch },
-      };
+      return { ...r, slipVerification: { ...prev, ...patch } };
     });
     saveReceipts(next);
   };
@@ -110,6 +129,8 @@ export const useWatershopReceipts = () => {
     orderedReceipts,
     loadReceipts,
     saveReceipts,
+    addReceipt,
+    updateStatus,
     attachSlip,
     removeSlip,
     updateSlipVerification,

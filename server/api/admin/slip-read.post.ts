@@ -28,6 +28,9 @@ type GeminiGenerateResponse = {
 /** ~600 KB หลัง base64 — ฝั่ง client ควรย่อรูปก่อนส่งแล้ว */
 const MAX_IMAGE_CHARS = 900_000;
 
+/** ถ้า primary model 503 จะลองตามลำดับนี้ */
+const FALLBACK_MODELS = ["gemini-1.5-flash", "gemini-1.5-pro-vision-latest"];
+
 /** บังคับให้ Gemini ตอบเป็น JSON ตาม schema (ลดกรณีตอบเป็นข้อความ/ markdown) */
 const SLIP_RESPONSE_SCHEMA = {
   type: "object",
@@ -49,6 +52,19 @@ const SLIP_RESPONSE_SCHEMA = {
   },
   required: ["amountBaht", "payerHint", "confidence"],
 } as const;
+
+async function callGeminiModel(
+  model: string,
+  apiKey: string,
+  body: object,
+): Promise<GeminiGenerateResponse> {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  return $fetch<GeminiGenerateResponse>(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+    body,
+  });
+}
 
 function sanitizeGeminiErrorMessage(raw: string): string {
   return raw
@@ -186,8 +202,6 @@ ${hintLine}
 - payerHint = ชื่อผู้โอน/บัญชี/เลขท้ายบัญชี ถ้าไม่มีให้ null
 - confidence = 0–100`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-
   const geminiBody = {
     contents: [
       {
@@ -204,55 +218,69 @@ ${hintLine}
     ],
     generationConfig: {
       temperature: 0.1,
-      maxOutputTokens: 256,
+      maxOutputTokens: 1024,
       responseMimeType: "application/json",
       responseSchema: SLIP_RESPONSE_SCHEMA,
     },
   };
 
-  let apiJson: GeminiGenerateResponse;
-  try {
-    apiJson = await $fetch<GeminiGenerateResponse>(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
-      },
-      body: geminiBody,
-    });
-  } catch (err: unknown) {
-    const status = fetchErrorStatus(err);
-    const raw =
-      err instanceof Error
-        ? err.message
-        : typeof err === "object" &&
-            err &&
-            "statusMessage" in err &&
-            typeof (err as { statusMessage?: unknown }).statusMessage === "string"
-          ? (err as { statusMessage: string }).statusMessage
-          : "เรียก Gemini ไม่สำเร็จ";
+  const modelsToTry = [
+    model,
+    ...FALLBACK_MODELS.filter((m) => m !== model),
+  ];
 
-    if (status === 429 || /429|too many requests/i.test(raw)) {
+  let apiJson: GeminiGenerateResponse | null = null;
+
+  for (let i = 0; i < modelsToTry.length; i++) {
+    try {
+      apiJson = await callGeminiModel(modelsToTry[i]!, apiKey, geminiBody);
+      break;
+    } catch (err: unknown) {
+      const status = fetchErrorStatus(err);
+      const raw =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" &&
+              err &&
+              "statusMessage" in err &&
+              typeof (err as { statusMessage?: unknown }).statusMessage ===
+                "string"
+            ? (err as { statusMessage: string }).statusMessage
+            : "เรียก Gemini ไม่สำเร็จ";
+
+      // 503 = model overloaded — ลอง fallback ถ้ายังมี
+      if (status === 503 && i < modelsToTry.length - 1) continue;
+
+      if (status === 503) {
+        throw createError({
+          statusCode: 503,
+          statusMessage: "Gemini ไม่พร้อมใช้งานในขณะนี้ — กรุณาลองอีกครั้งภายหลัง",
+        });
+      }
+      if (status === 429 || /429|too many requests/i.test(raw)) {
+        throw createError({
+          statusCode: 429,
+          statusMessage: geminiRateLimitMessage(),
+        });
+      }
       throw createError({
-        statusCode: 429,
-        statusMessage: geminiRateLimitMessage(),
+        statusCode: 502,
+        statusMessage: sanitizeGeminiErrorMessage(raw),
       });
     }
+  }
 
+  // type narrowing — loop จะ throw หรือ break เสมอ
+  const resolvedJson = apiJson!;
+
+  if (resolvedJson.error?.message) {
     throw createError({
       statusCode: 502,
-      statusMessage: sanitizeGeminiErrorMessage(raw),
+      statusMessage: resolvedJson.error.message.slice(0, 400),
     });
   }
 
-  if (apiJson.error?.message) {
-    throw createError({
-      statusCode: 502,
-      statusMessage: apiJson.error.message.slice(0, 400),
-    });
-  }
-
-  const c0 = apiJson.candidates?.[0];
+  const c0 = resolvedJson.candidates?.[0];
   const finish = c0?.finishReason;
   if (finish === "MAX_TOKENS") {
     throw createError({
@@ -267,7 +295,7 @@ ${hintLine}
     });
   }
 
-  const parts = c0?.content?.parts ?? [];
+  const parts = resolvedJson.candidates?.[0]?.content?.parts ?? [];
   const text = parts.map((p) => p.text ?? "").join("").trim();
 
   if (!text) {

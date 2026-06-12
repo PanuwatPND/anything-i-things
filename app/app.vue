@@ -14,6 +14,8 @@
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
+    <AppAlertDialog />
+    <AppToast />
   </div>
 </template>
 

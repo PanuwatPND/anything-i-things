@@ -16,12 +16,14 @@
       </div>
     </div>
     <UserFinanceChatDock />
+    <UserTabBar v-if="showTabBar" />
   </div>
 </template>
 
 <script setup lang="ts">
 const route = useRoute();
 const showHeader = computed(() => route.path !== "/user");
+const showTabBar = computed(() => !route.path.startsWith('/user/payment'));
 </script>
 
 <style scoped>

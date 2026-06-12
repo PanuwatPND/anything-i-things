@@ -14,7 +14,6 @@
     "@vueuse/motion": "^3.0.3",
     "apexcharts": "^5.11.0",
     "nuxt": "^4.4.5",
-    "sweetalert2": "^11.26.24",
     "vue": "^3.5.33",
     "vue-router": "^5.0.6",
     "vue3-apexcharts": "^1.11.1"
