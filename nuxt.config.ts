@@ -9,6 +9,9 @@ export default defineNuxtConfig({
     geminiApiKey: '',
     /** โมเดล Vision สำหรับอ่านสลิป (override ด้วย NUXT_GEMINI_MODEL) */
     geminiModel: 'gemini-2.5-flash',
+    /** Telegram Bot — ตั้งใน .env: NUXT_TELEGRAM_BOT_TOKEN และ NUXT_TELEGRAM_CHAT_ID */
+    telegramBotToken: '',
+    telegramChatId: '',
   },
   css: ['~/assets/css/main.css'],
   app: {

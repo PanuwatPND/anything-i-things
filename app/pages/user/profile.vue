@@ -22,18 +22,23 @@
 
         <template v-if="showEditor">
           <div
-            class="mt-4 flex rounded-2xl bg-slate-100 p-1 ring-1 ring-slate-200/80"
+            class="lg-shell relative mt-4 flex rounded-2xl p-1"
             role="tablist"
             aria-label="ส่วนตั้งค่าโปรไฟล์"
           >
+            <div
+              class="lg-pill pointer-events-none absolute top-1 rounded-xl"
+              :style="editorPillStyle"
+              aria-hidden="true"
+            />
             <button
               type="button"
               role="tab"
               :aria-selected="activeTab === 'personal'"
-              class="flex-1 rounded-xl px-2 py-2 text-center text-xs font-semibold transition sm:text-sm"
+              class="relative z-10 flex-1 rounded-xl px-2 py-2 text-center text-xs font-semibold transition-colors duration-200 sm:text-sm"
               :class="
                 activeTab === 'personal'
-                  ? 'bg-white text-slate-900 shadow-sm'
+                  ? 'text-slate-800'
                   : 'text-slate-500 hover:text-slate-700'
               "
               @click="activeTab = 'personal'"
@@ -44,10 +49,10 @@
               type="button"
               role="tab"
               :aria-selected="activeTab === 'web'"
-              class="flex-1 rounded-xl px-2 py-2 text-center text-xs font-semibold transition sm:text-sm"
+              class="relative z-10 flex-1 rounded-xl px-2 py-2 text-center text-xs font-semibold transition-colors duration-200 sm:text-sm"
               :class="
                 activeTab === 'web'
-                  ? 'bg-white text-slate-900 shadow-sm'
+                  ? 'text-slate-800'
                   : 'text-slate-500 hover:text-slate-700'
               "
               @click="activeTab = 'web'"
@@ -178,8 +183,8 @@
           ตัวเลือกเหล่านี้เก็บในอุปกรณ์นี้เท่านั้น ไม่ส่งไปเซิร์ฟเวอร์
         </p>
 
-        <label
-          class="mt-4 flex cursor-pointer items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3"
+        <div
+          class="lg-row mt-4 flex items-center justify-between gap-3 px-3 py-3"
         >
           <span class="min-w-0">
             <span class="block text-sm font-medium text-slate-800"
@@ -189,17 +194,19 @@
               >ลด overlay โฟกัสระหว่างนำทาง</span
             >
           </span>
-          <input
-            :checked="disableRouteBlur"
-            type="checkbox"
-            class="h-5 w-5 shrink-0 rounded border-slate-300 text-black focus:ring-black"
-            @change="onRouteBlurChange"
-          />
-        </label>
+          <button
+            type="button"
+            role="switch"
+            :aria-checked="disableRouteBlur"
+            class="lg-toggle"
+            :class="{ 'lg-toggle--on': disableRouteBlur }"
+            @click="setRouteBlur(!disableRouteBlur)"
+          >
+            <span class="lg-toggle-knob" aria-hidden="true" />
+          </button>
+        </div>
 
-        <div
-          class="mt-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3"
-        >
+        <div class="lg-row mt-3 px-3 py-3">
           <p class="text-sm font-medium text-slate-800">แชทบอทลุคซาเก้ท</p>
           <p class="mt-0.5 text-[11px] text-slate-500">
             ล้างชื่อเล่นที่บันทึกไว้ในเครื่อง
@@ -291,6 +298,13 @@ const webNotice = ref("");
 const showEditor = ref(false);
 const activeTab = ref<"personal" | "web">("personal");
 const disableRouteBlur = ref(false);
+
+const editorPillStyle = computed(() => ({
+  left: activeTab.value === "personal" ? "4px" : "calc(50%)",
+  width: "calc(50% - 4px)",
+  height: "calc(100% - 8px)",
+  transition: "left 0.32s cubic-bezier(0.25, 1, 0.5, 1)",
+}));
 const form = reactive({
   name: "",
   houseNo: "",
@@ -318,8 +332,7 @@ const goHome = () => {
 
 const routeBlurOverlay = useState("route-nav-blur", () => false);
 
-const onRouteBlurChange = (event: Event) => {
-  const checked = (event.target as HTMLInputElement).checked;
+const setRouteBlur = (checked: boolean) => {
   disableRouteBlur.value = checked;
   if (!import.meta.client) return;
   if (checked) {

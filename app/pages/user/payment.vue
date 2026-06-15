@@ -62,7 +62,9 @@
             </div>
             <div class="flex justify-between gap-2">
               <span class="text-white/60">จำนวน</span>
-              <span class="font-medium">{{ formatInt(receipt.quantity) }} แพ็ค</span>
+              <span class="font-medium"
+                >{{ formatInt(receipt.quantity) }} แพ็ค</span
+              >
             </div>
             <div class="flex justify-between gap-2">
               <span class="text-white/60">เลขบิล</span>
@@ -76,19 +78,32 @@
           class="rounded-3xl bg-white p-5 shadow-[0_8px_28px_-12px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.03]"
         >
           <h2 class="font-bold text-slate-900">ช่องทางชำระเงิน</h2>
-          <p class="mt-0.5 text-xs text-slate-500">โอนเงินแล้วแนบสลิปด้านล่าง</p>
+          <p class="mt-0.5 text-xs text-slate-500">
+            โอนเงินแล้วแนบสลิปด้านล่าง
+          </p>
 
           <div class="mt-4 space-y-2">
             <div
               class="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3"
             >
               <div>
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <p
+                  class="text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+                >
                   PromptPay
                 </p>
                 <!-- เปลี่ยนเป็นเบอร์จริงที่นี่ -->
-                <p class="mt-0.5 text-lg font-bold tabular-nums tracking-wide text-slate-900">
-                  {{ PROMPTPAY_NUMBER }}
+                <p
+                  class="mt-0.5 text-lg font-bold tabular-nums tracking-wide text-slate-900"
+                >
+                  <div class="flex flex-col">
+                    {{ PROMPTPAY_NUMBER }}
+                  <span class="text-xs text-slate-500/50"
+                    >
+                    
+                     นายภานุวัฒน์ เพชรสีเขียว</span
+                  >
+                  </div>
                 </p>
               </div>
               <button
@@ -160,8 +175,12 @@
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
               </svg>
-              <span class="text-sm font-semibold text-slate-600">แนบรูปสลิป</span>
-              <span class="text-xs text-slate-400">JPG, PNG ขนาดไม่เกิน 10 MB</span>
+              <span class="text-sm font-semibold text-slate-600"
+                >แนบรูปสลิป</span
+              >
+              <span class="text-xs text-slate-400"
+                >JPG, PNG ขนาดไม่เกิน 10 MB</span
+              >
             </button>
           </div>
         </div>
@@ -180,7 +199,9 @@
           type="button"
           :disabled="!receipt.slipDataUrl || verifying"
           class="w-full rounded-2xl py-4 text-sm font-bold shadow-[0_8px_24px_-8px_rgba(15,23,42,0.5)] transition active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
-          :class="receipt.slipDataUrl && !verifying ? 'bg-black text-white' : ''"
+          :class="
+            receipt.slipDataUrl && !verifying ? 'bg-black text-white' : ''
+          "
           @click="verifyAndConfirm"
         >
           <span v-if="verifying" class="flex items-center justify-center gap-2">
@@ -193,7 +214,6 @@
           <span v-else>ยืนยันการชำระเงิน</span>
         </button>
       </template>
-
     </div>
   </div>
 </template>
@@ -210,11 +230,12 @@ definePageMeta({
 });
 
 // เปลี่ยนเป็นเบอร์ PromptPay จริงตรงนี้
-const PROMPTPAY_NUMBER = "0XX-XXX-XXXX";
+const PROMPTPAY_NUMBER = "095-236-7130";
 
 const route = useRoute();
 const router = useRouter();
 const { formatInt } = useFormatNumber();
+const { user } = useAuth();
 const { receipts, loadReceipts, attachSlip, removeSlip, updateStatus } =
   useWatershopReceipts();
 const { runOcr } = useSlipOcr();
@@ -267,8 +288,15 @@ const onRemoveSlip = () => {
 
 const fetchErrorMessage = (e: unknown): string => {
   if (e && typeof e === "object") {
-    const err = e as { data?: { statusMessage?: string }; statusMessage?: string };
-    return err.data?.statusMessage || err.statusMessage || (e instanceof Error ? e.message : "");
+    const err = e as {
+      data?: { statusMessage?: string };
+      statusMessage?: string;
+    };
+    return (
+      err.data?.statusMessage ||
+      err.statusMessage ||
+      (e instanceof Error ? e.message : "")
+    );
   }
   return e instanceof Error ? e.message : "เกิดข้อผิดพลาด";
 };
@@ -306,9 +334,7 @@ const verifyAndConfirm = async () => {
     }
 
     if (ocrResult.amountBaht == null) {
-      throw new Error(
-        "ไม่พบยอดเงินบนสลิป — กรุณาถ่ายรูปใหม่ให้ตัวเลขชัดเจน",
-      );
+      throw new Error("ไม่พบยอดเงินบนสลิป — กรุณาถ่ายรูปใหม่ให้ตัวเลขชัดเจน");
     }
 
     if (ocrResult.amountBaht !== r.amount) {
@@ -318,6 +344,18 @@ const verifyAndConfirm = async () => {
     }
 
     updateStatus(r.id, "paid");
+
+    $fetch("/api/notify/payment", {
+      method: "POST",
+      body: {
+        id: r.id,
+        itemName: r.itemName,
+        amount: r.amount,
+        payerHint: ocrResult.payerHint,
+        buyerName: user.value?.name,
+      },
+    }).catch(() => {});
+
     await alert({
       title: "ชำระเงินสำเร็จ",
       description: `ยอด ${formatInt(r.amount)} ฿ ตรงกับสลิป — รอการจัดส่ง`,
@@ -325,7 +363,8 @@ const verifyAndConfirm = async () => {
     });
     await router.push("/user/bills");
   } catch (err) {
-    verifyError.value = err instanceof Error ? err.message : "ตรวจสลิปไม่สำเร็จ";
+    verifyError.value =
+      err instanceof Error ? err.message : "ตรวจสลิปไม่สำเร็จ";
   } finally {
     verifying.value = false;
   }

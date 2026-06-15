@@ -1,6 +1,6 @@
 <template>
   <div
-    class="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
+    class="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+0.25rem)]"
   >
     <div
       ref="shellRef"
@@ -268,32 +268,3 @@ const onPointerCancel = () => {
 
 onUnmounted(() => { pillReady.value = false })
 </script>
-
-<style>
-.lg-shell {
-  background: rgba(248, 250, 252, 0.48);
-  backdrop-filter: blur(40px) saturate(1.8) brightness(1.04);
-  -webkit-backdrop-filter: blur(40px) saturate(1.8) brightness(1.04);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.92),
-    inset 0 -0.5px 0 rgba(0, 0, 0, 0.04),
-    inset 1px 0 0 rgba(255, 255, 255, 0.35),
-    inset -1px 0 0 rgba(255, 255, 255, 0.35),
-    0 24px 64px -20px rgba(15, 23, 42, 0.28),
-    0 8px 24px -8px rgba(15, 23, 42, 0.10);
-}
-
-.lg-pill {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  border: 0.5px solid rgba(255, 255, 255, 0.95);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 1),
-    inset 0 -0.5px 0 rgba(0, 0, 0, 0.05),
-    0 4px 14px rgba(15, 23, 42, 0.10),
-    0 1px 3px rgba(15, 23, 42, 0.06);
-}
-</style>

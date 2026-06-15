@@ -111,6 +111,7 @@ const bottlesOf = (id: string) =>
 
 const router = useRouter();
 const { formatInt } = useFormatNumber();
+const { user } = useAuth();
 const shop = useLocalWatershop();
 const {
   items,
@@ -186,6 +187,18 @@ const checkout = async () => {
       status: "pending",
     };
     addReceipt(newReceipt);
+
+    $fetch("/api/notify/order", {
+      method: "POST",
+      body: {
+        id: newReceipt.id,
+        itemName: newReceipt.itemName,
+        quantity: newReceipt.quantity,
+        amount: newReceipt.amount,
+        buyerName: user.value?.name,
+        houseNo: user.value?.houseNo,
+      },
+    }).catch(() => {});
 
     clearCart();
     success("สั่งซื้อสำเร็จ", "กรุณาชำระเงินและแนบสลิป");
