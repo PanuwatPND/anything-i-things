@@ -2,8 +2,8 @@ const TELEGRAM_API = "https://api.telegram.org";
 
 export async function sendTelegram(text: string): Promise<void> {
   const config = useRuntimeConfig();
-  const token = (config.telegramBotToken as string | undefined)?.trim();
-  const chatId = (config.telegramChatId as string | undefined)?.trim();
+  const token = String(config.telegramBotToken ?? "").trim();
+  const chatId = String(config.telegramChatId ?? "").trim();
   if (!token || !chatId) return;
 
   await $fetch(`${TELEGRAM_API}/bot${token}/sendMessage`, {
