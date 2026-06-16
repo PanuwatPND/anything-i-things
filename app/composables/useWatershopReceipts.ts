@@ -15,7 +15,6 @@ export const BILL_STATUS_LABEL: Record<BillStatusCode, string> = {
   cancelled: "ยกเลิก",
 };
 
-/** ข้อมูลการตรวจสลิป — ยอดอาจมาจาก Gemini Vision หรือพิมพ์มือ */
 export type SlipVerification = {
   amountOnSlip?: number;
   payerHint?: string;
@@ -41,6 +40,8 @@ export type WatershopReceipt = {
 export const useWatershopReceipts = () => {
   const receipts = ref<WatershopReceipt[]>([]);
 
+  // ──────────────── localStorage helpers ────────────────
+
   const loadReceipts = () => {
     if (!import.meta.client) return;
     try {
@@ -49,6 +50,7 @@ export const useWatershopReceipts = () => {
     } catch {
       receipts.value = [];
     }
+    syncFromSupabase().catch(() => {});
   };
 
   const saveReceipts = (next: WatershopReceipt[]) => {
@@ -64,11 +66,79 @@ export const useWatershopReceipts = () => {
     ),
   );
 
+  // ──────────────── Supabase sync ────────────────
+
+  const syncFromSupabase = async () => {
+    if (!import.meta.client) return;
+    const { user } = useAuth();
+    if (!user.value?.email) return;
+
+    const sb = useSupabase();
+    const { data, error } = await sb
+      .from("receipts")
+      .select("*")
+      .eq("user_email", user.value.email)
+      .order("created_at", { ascending: false });
+
+    if (error || !data?.length) return;
+
+    // แปลง snake_case → camelCase และรักษา slipDataUrl/slipVerification จาก localStorage
+    const local = receipts.value;
+    const merged: WatershopReceipt[] = data.map((row) => {
+      const localItem = local.find((r) => r.id === row.id);
+      return {
+        id: row.id,
+        itemName: row.item_name,
+        quantity: row.quantity,
+        amount: row.amount,
+        status: row.status as BillStatusCode,
+        createdAt: row.created_at,
+        slipDataUrl: localItem?.slipDataUrl,
+        slipVerification: localItem?.slipVerification,
+      };
+    });
+
+    saveReceipts(merged);
+  };
+
+  const pushToSupabase = (receipt: WatershopReceipt, userEmail: string) => {
+    const sb = useSupabase();
+    sb.from("receipts")
+      .upsert({
+        id: receipt.id,
+        user_email: userEmail,
+        item_name: receipt.itemName,
+        quantity: receipt.quantity,
+        amount: receipt.amount,
+        status: receipt.status,
+        created_at: receipt.createdAt,
+        updated_at: new Date().toISOString(),
+      })
+      .then(({ error }) => {
+        if (error) console.warn("[supabase] upsert failed", error.message);
+      });
+  };
+
+  const pushStatusToSupabase = (receiptId: string, status: BillStatusCode) => {
+    const sb = useSupabase();
+    sb.from("receipts")
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq("id", receiptId)
+      .then(({ error }) => {
+        if (error) console.warn("[supabase] status update failed", error.message);
+      });
+  };
+
+  // ──────────────── write operations ────────────────
+
   const addReceipt = (receipt: WatershopReceipt) => {
     if (!import.meta.client) return;
     const raw = localStorage.getItem(RECEIPTS_STORAGE_KEY);
     const current = raw ? (JSON.parse(raw) as WatershopReceipt[]) : [];
     saveReceipts([receipt, ...current]);
+
+    const { user } = useAuth();
+    if (user.value?.email) pushToSupabase(receipt, user.value.email);
   };
 
   const updateStatus = (receiptId: string, status: BillStatusCode) => {
@@ -76,6 +146,7 @@ export const useWatershopReceipts = () => {
       r.id === receiptId ? { ...r, status } : r,
     );
     saveReceipts(next);
+    pushStatusToSupabase(receiptId, status);
   };
 
   const attachSlip = (receiptId: string, dataUrl: string) => {

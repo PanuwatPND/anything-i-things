@@ -96,14 +96,8 @@
                 <p
                   class="mt-0.5 text-lg font-bold tabular-nums tracking-wide text-slate-900"
                 >
-                  <div class="flex flex-col">
-                    {{ PROMPTPAY_NUMBER }}
-                  <span class="text-xs text-slate-500/50"
-                    >
-                    
-                     นายภานุวัฒน์ เพชรสีเขียว</span
-                  >
-                  </div>
+                  {{ PROMPTPAY_NUMBER }}
+                  <span class="block text-xs font-normal text-slate-500/50">นายภานุวัฒน์ เพชรสีเขียว</span>
                 </p>
               </div>
               <button
@@ -343,18 +337,28 @@ const verifyAndConfirm = async () => {
       );
     }
 
-    updateStatus(r.id, "paid");
-
-    $fetch("/api/notify/payment", {
-      method: "POST",
-      body: {
-        id: r.id,
-        itemName: r.itemName,
-        amount: r.amount,
-        payerHint: ocrResult.payerHint,
-        buyerName: user.value?.name,
+    // เช็ค duplicate ก่อน — ถ้าซ้ำให้ block ทันที
+    const notifyRes = await $fetch<{ ok: boolean; duplicate?: boolean }>(
+      "/api/notify/payment",
+      {
+        method: "POST",
+        body: {
+          id: r.id,
+          itemName: r.itemName,
+          amount: r.amount,
+          payerHint: ocrResult.payerHint,
+          buyerName: user.value?.name,
+        },
       },
-    }).catch(() => {});
+    ).catch(() => ({ ok: true, duplicate: false }));
+
+    if (notifyRes.duplicate) {
+      throw new Error(
+        "พบสลิปยอดนี้ในระบบแล้วภายใน 24 ชั่วโมง — ไม่สามารถใช้สลิปซ้ำได้ กรุณาติดต่อแอดมิน",
+      );
+    }
+
+    updateStatus(r.id, "paid");
 
     await alert({
       title: "ชำระเงินสำเร็จ",
