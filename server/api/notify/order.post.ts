@@ -27,15 +27,14 @@ export default defineEventHandler(async (event) => {
   const b = await readBody<Body>(event);
 
   const lines = [
-    `📦 <b>ออเดอร์ใหม่</b>`,
+    b.houseNo ? `📦 <b>ออเดอร์ใหม่</b>                       ${b.houseNo}` : `📦 <b>ออเดอร์ใหม่</b>`,
     SEP,
     row("รายการ", `${b.itemName} × ${b.quantity}`),
     row("ยอด", `<b>${b.amount.toLocaleString("th-TH")} ฿</b>`),
     b.buyerName ? row("ลูกค้า", b.buyerName) : null,
-    b.houseNo ? row("บ้าน", b.houseNo) : null,
-    row("สถานะ", "⏳ รอชำระเงิน"),
+    row("สถานะ", "◔ รอชำระเงิน"),
     SEP,
-    `🕐 ${thaiTime()}`,
+    `⏲ ${thaiTime()}`,
   ]
     .filter(Boolean)
     .join("\n");

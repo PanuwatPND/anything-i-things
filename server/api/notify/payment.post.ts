@@ -4,13 +4,17 @@ type Body = {
   amount: number;
   payerHint?: string | null;
   buyerName?: string;
+  houseNo?: string;
 };
 
 /** in-memory cache — key = "amount:payerKey", value = timestamp ms */
 const paidCache = new Map<string, number>();
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-function cacheKey(amount: number, payerHint: string | null | undefined): string {
+function cacheKey(
+  amount: number,
+  payerHint: string | null | undefined,
+): string {
   const payer = (payerHint ?? "").toLowerCase().replace(/\s+/g, "");
   return `${Math.round(amount)}:${payer}`;
 }
@@ -54,9 +58,11 @@ export default defineEventHandler(async (event) => {
 
   const statusText = duplicate
     ? "⚠️ <b>สลิปซ้ำ — ตรวจด้วยมือ</b>"
-    : "✅ ชำระเงินแล้ว";
+    : "✔ ชำระเงินแล้ว";
 
-  const header = duplicate ? `⚠️ <b>สลิปซ้ำ!</b>` : `💳 <b>ชำระเงินแล้ว</b>`;
+  const header = duplicate
+    ? `⚠️ <b>สลิปซ้ำ!</b>                       ${b.houseNo ?? ""}`
+    : `💳 <b>ชำระเงินแล้ว</b>                       ${b.houseNo ?? ""}`;
 
   const lines = [
     header,
@@ -68,7 +74,7 @@ export default defineEventHandler(async (event) => {
     b.payerHint ? row("ผู้โอน", b.payerHint) : null,
     row("สถานะ", statusText),
     SEP,
-    `🕐 ${thaiTime()}`,
+    `⏲ ${thaiTime()}`,
   ]
     .filter(Boolean)
     .join("\n");

@@ -348,6 +348,7 @@ const verifyAndConfirm = async () => {
           amount: r.amount,
           payerHint: ocrResult.payerHint,
           buyerName: user.value?.name,
+          houseNo: user.value?.houseNo,
         },
       },
     ).catch(() => ({ ok: true, duplicate: false }));
