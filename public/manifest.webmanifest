@@ -22,5 +22,28 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "สั่งน้ำ",
+      "short_name": "สั่งน้ำ",
+      "description": "เปิดหน้าสั่งซื้อน้ำดื่ม",
+      "url": "/user/shop",
+      "icons": [{ "src": "/shortcut-shop.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "ดูบิล",
+      "short_name": "บิล",
+      "description": "ตรวจสอบรายการสั่งซื้อและบิล",
+      "url": "/user/bills",
+      "icons": [{ "src": "/shortcut-bills.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "ตะกร้า",
+      "short_name": "ตะกร้า",
+      "description": "ดูตะกร้าสินค้า",
+      "url": "/user/cart",
+      "icons": [{ "src": "/shortcut-cart.png", "sizes": "192x192" }]
+    }
   ]
 }

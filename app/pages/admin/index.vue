@@ -23,11 +23,13 @@
             </span>
             <h1 class="mt-3 text-3xl font-bold tracking-tight text-slate-900">
               {{
-                activeTab === "stock"
-                  ? "จัดการสต็อกน้ำ"
-                  : activeTab === "slips"
-                    ? "สลิป / ใบเสร็จ"
-                    : "ตรวจสอบสลิป"
+                activeTab === "orders"
+                  ? "ออเดอร์ทั้งหมด"
+                  : activeTab === "stock"
+                    ? "จัดการสต็อกน้ำ"
+                    : activeTab === "slips"
+                      ? "สลิป / ใบเสร็จ"
+                      : "ตรวจสอบสลิป"
               }}
             </h1>
             <p class="mt-1 truncate text-sm text-slate-500">
@@ -44,10 +46,24 @@
         </div>
 
         <div
-          class="mt-4 grid grid-cols-3 gap-1 rounded-2xl bg-slate-100/90 p-1 ring-1 ring-slate-200/80"
+          class="mt-4 grid grid-cols-4 gap-1 rounded-2xl bg-slate-100/90 p-1 ring-1 ring-slate-200/80"
           role="tablist"
           aria-label="เมนูแอดมิน"
         >
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="activeTab === 'orders'"
+            class="rounded-xl py-2 text-center text-xs font-semibold transition sm:text-sm"
+            :class="
+              activeTab === 'orders'
+                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80'
+                : 'text-slate-600 hover:text-slate-900'
+            "
+            @click="activeTab = 'orders'"
+          >
+            ออเดอร์
+          </button>
           <button
             type="button"
             role="tab"
@@ -88,10 +104,137 @@
             "
             @click="activeTab = 'verify'"
           >
-            ตรวจสอบ
+            ตรวจ
           </button>
         </div>
       </section>
+
+      <template v-if="activeTab === 'orders'">
+        <!-- Stats -->
+        <section
+          class="rounded-3xl bg-white p-5 shadow-[0_8px_28px_-12px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.03]"
+        >
+          <div class="grid grid-cols-4 gap-2">
+            <div
+              class="rounded-2xl border border-slate-200 bg-slate-900 p-3 text-white"
+            >
+              <p class="text-[10px] font-medium uppercase tracking-wide text-white/70">ทั้งหมด</p>
+              <p class="mt-1 text-xl font-bold tabular-nums">{{ adminOrders.length }}</p>
+            </div>
+            <div class="rounded-2xl border border-amber-100 bg-amber-50/80 p-3">
+              <p class="text-[10px] font-medium uppercase tracking-wide text-amber-600">รอชำระ</p>
+              <p class="mt-1 text-xl font-bold tabular-nums text-amber-700">
+                {{ adminOrders.filter(o => o.status === 'pending').length }}
+              </p>
+            </div>
+            <div class="rounded-2xl border border-blue-100 bg-blue-50/80 p-3">
+              <p class="text-[10px] font-medium uppercase tracking-wide text-blue-600">ชำระแล้ว</p>
+              <p class="mt-1 text-xl font-bold tabular-nums text-blue-700">
+                {{ adminOrders.filter(o => o.status === 'paid').length }}
+              </p>
+            </div>
+            <div class="rounded-2xl border border-violet-100 bg-violet-50/80 p-3">
+              <p class="text-[10px] font-medium uppercase tracking-wide text-violet-600">กำลังส่ง</p>
+              <p class="mt-1 text-xl font-bold tabular-nums text-violet-700">
+                {{ adminOrders.filter(o => o.status === 'shipping').length }}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Orders list -->
+        <section
+          class="rounded-3xl bg-white p-5 shadow-[0_8px_28px_-12px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.03]"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex flex-wrap gap-1">
+              <button
+                v-for="f in orderFilterOptions"
+                :key="f.value"
+                type="button"
+                class="rounded-full px-3 py-1 text-[11px] font-semibold transition"
+                :class="
+                  orderFilter === f.value
+                    ? 'bg-slate-900 text-white'
+                    : 'bg-slate-100 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50'
+                "
+                @click="orderFilter = f.value"
+              >
+                {{ f.label }}
+              </button>
+            </div>
+            <button
+              type="button"
+              :disabled="ordersLoading"
+              class="shrink-0 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+              @click="loadAdminOrders"
+            >
+              {{ ordersLoading ? "..." : "รีเฟรช" }}
+            </button>
+          </div>
+
+          <div
+            v-if="ordersLoading"
+            class="mt-6 flex justify-center py-8"
+          >
+            <span class="h-7 w-7 animate-spin rounded-full border-2 border-slate-200 border-t-slate-800" />
+          </div>
+
+          <div
+            v-else-if="filteredAdminOrders.length === 0"
+            class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500"
+          >
+            ไม่มีออเดอร์ในตัวกรองนี้
+          </div>
+
+          <ul v-else class="mt-4 space-y-3">
+            <li
+              v-for="o in filteredAdminOrders"
+              :key="o.id"
+              class="overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/70"
+            >
+              <div class="flex items-start justify-between gap-3 border-b border-slate-100/80 bg-white/60 px-4 py-3">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2">
+                    <p v-if="o.houseNo" class="font-bold text-slate-900">🏠 {{ o.houseNo }}</p>
+                    <p v-if="o.userName" class="text-sm text-slate-600">{{ o.userName }}</p>
+                  </div>
+                  <p class="mt-0.5 text-xs text-slate-400">{{ o.userEmail }}</p>
+                  <p class="mt-1 text-sm font-semibold text-slate-800">
+                    {{ o.itemName }} × {{ formatInt(o.quantity) }}
+                  </p>
+                  <p class="text-xs text-slate-500">{{ formatReceiptDate(o.createdAt) }}</p>
+                </div>
+                <div class="shrink-0 text-right">
+                  <p class="text-lg font-bold tabular-nums text-slate-900">
+                    {{ formatInt(o.amount) }}
+                    <span class="text-xs font-semibold text-slate-500">฿</span>
+                  </p>
+                  <span
+                    class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                    :class="orderStatusClass(o.status)"
+                  >
+                    {{ BILL_STATUS_LABEL[o.status] }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap gap-1.5 px-4 py-3">
+                <button
+                  v-for="s in nextStatusOptions(o.status)"
+                  :key="s.value"
+                  type="button"
+                  class="rounded-full px-3 py-1.5 text-[11px] font-semibold transition active:scale-95"
+                  :class="s.class"
+                  @click="updateOrderStatus(o.id, s.value)"
+                >
+                  {{ s.label }}
+                </button>
+              </div>
+            </li>
+          </ul>
+        </section>
+      </template>
 
       <template v-if="activeTab === 'stock'">
         <section
@@ -553,7 +696,9 @@
 import type {
   SlipVerification,
   WatershopReceipt,
+  BillStatusCode,
 } from "~/composables/useWatershopReceipts";
+import { BILL_STATUS_LABEL } from "~/composables/useWatershopReceipts";
 import {
   readFileAsDataUrl,
   slipImagePartsForOcr,
@@ -577,7 +722,109 @@ const {
 } = useWatershopReceipts();
 
 const { runOcr } = useSlipOcr();
-const activeTab = ref<"stock" | "slips" | "verify">("stock");
+const activeTab = ref<"orders" | "stock" | "slips" | "verify">("orders");
+
+// ──────────────── Admin Orders ────────────────
+
+type AdminOrder = {
+  id: string;
+  userEmail: string;
+  userName: string;
+  houseNo: string;
+  itemName: string;
+  quantity: number;
+  amount: number;
+  status: BillStatusCode;
+  createdAt: string;
+};
+
+const adminOrders = ref<AdminOrder[]>([]);
+const ordersLoading = ref(false);
+
+const loadAdminOrders = async () => {
+  if (!import.meta.client) return;
+  ordersLoading.value = true;
+  try {
+    const sb = useSupabase();
+    const [{ data: receiptsData }, { data: usersData }] = await Promise.all([
+      sb.from("receipts").select("*").order("created_at", { ascending: false }),
+      sb.from("users").select("email, name, house_no"),
+    ]);
+    const userMap = new Map(
+      (usersData ?? []).map((u: { email: string; name: string; house_no: string }) => [u.email, u]),
+    );
+    adminOrders.value = (receiptsData ?? []).map((r: Record<string, unknown>) => ({
+      id: r.id as string,
+      userEmail: r.user_email as string,
+      userName: (userMap.get(r.user_email as string) as { name?: string } | undefined)?.name ?? "",
+      houseNo: (userMap.get(r.user_email as string) as { house_no?: string } | undefined)?.house_no ?? "",
+      itemName: r.item_name as string,
+      quantity: r.quantity as number,
+      amount: r.amount as number,
+      status: r.status as BillStatusCode,
+      createdAt: r.created_at as string,
+    }));
+  } catch {
+    /* silent */
+  } finally {
+    ordersLoading.value = false;
+  }
+};
+
+const updateOrderStatus = async (orderId: string, status: BillStatusCode) => {
+  const sb = useSupabase();
+  const { error } = await sb
+    .from("receipts")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", orderId);
+  if (!error) {
+    const o = adminOrders.value.find((x) => x.id === orderId);
+    if (o) o.status = status;
+  }
+};
+
+type OrderFilterValue = "all" | "pending" | "paid" | "shipping" | "delivered";
+const orderFilter = ref<OrderFilterValue>("all");
+const orderFilterOptions: { value: OrderFilterValue; label: string }[] = [
+  { value: "all", label: "ทั้งหมด" },
+  { value: "pending", label: "รอชำระ" },
+  { value: "paid", label: "ชำระแล้ว" },
+  { value: "shipping", label: "กำลังส่ง" },
+  { value: "delivered", label: "ส่งแล้ว" },
+];
+
+const filteredAdminOrders = computed(() =>
+  orderFilter.value === "all"
+    ? adminOrders.value
+    : adminOrders.value.filter((o) => o.status === orderFilter.value),
+);
+
+const orderStatusClass = (status: BillStatusCode) => {
+  const map: Record<BillStatusCode, string> = {
+    pending: "bg-amber-100 text-amber-800 ring-1 ring-amber-200",
+    paid: "bg-blue-100 text-blue-800 ring-1 ring-blue-200",
+    shipping: "bg-violet-100 text-violet-800 ring-1 ring-violet-200",
+    delivered: "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200",
+    cancelled: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
+  };
+  return map[status];
+};
+
+type StatusOption = { value: BillStatusCode; label: string; class: string };
+const nextStatusOptions = (current: BillStatusCode): StatusOption[] => {
+  const all: StatusOption[] = [
+    { value: "pending", label: "⏳ รอชำระ", class: "bg-amber-50 text-amber-700 ring-1 ring-amber-200 hover:bg-amber-100" },
+    { value: "paid", label: "✓ ยืนยันชำระ", class: "bg-blue-50 text-blue-700 ring-1 ring-blue-200 hover:bg-blue-100" },
+    { value: "shipping", label: "🛵 กำลังจัดส่ง", class: "bg-violet-50 text-violet-700 ring-1 ring-violet-200 hover:bg-violet-100" },
+    { value: "delivered", label: "✓ ส่งแล้ว", class: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100" },
+    { value: "cancelled", label: "✕ ยกเลิก", class: "bg-rose-50 text-rose-700 ring-1 ring-rose-200 hover:bg-rose-100" },
+  ];
+  return all.filter((s) => s.value !== current);
+};
+
+if (import.meta.client) {
+  loadAdminOrders();
+}
 const slipInputRef = ref<HTMLInputElement | null>(null);
 const pendingSlipReceiptId = ref<string | null>(null);
 const ocrBusyId = ref<string | null>(null);
@@ -598,6 +845,8 @@ if (import.meta.client) {
 watch(activeTab, (tab) => {
   if ((tab === "slips" || tab === "verify") && import.meta.client)
     loadReceipts();
+  if (tab === "orders" && import.meta.client)
+    loadAdminOrders();
 });
 
 type VerifyFilterValue = "all" | "has_slip" | "unchecked" | "mismatch";

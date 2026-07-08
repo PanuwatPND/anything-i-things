@@ -97,7 +97,18 @@ const { orderedReceipts, loadReceipts } = useWatershopReceipts();
 const trackingOpen = ref(false);
 const trackingTitle = ref("รายการจัดส่ง");
 
-onMounted(() => loadReceipts());
+onMounted(() => {
+  loadReceipts();
+  document.addEventListener("visibilitychange", onVisibilityChange);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("visibilitychange", onVisibilityChange);
+});
+
+const onVisibilityChange = () => {
+  if (document.visibilityState === "visible") loadReceipts();
+};
 
 const statusOf = (r: WatershopReceipt) => {
   const code = (r.status ?? "pending") as BillStatusCode;
