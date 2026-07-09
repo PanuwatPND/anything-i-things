@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-slate-100 px-4 pb-32 pt-2 text-slate-900"
-  >
-    <div class="mx-auto w-full max-w-md space-y-4">
+  <div class="mx-auto w-full max-w-md space-y-4">
       <div
         class="rounded-[2rem] bg-white p-4 shadow-[0_18px_40px_rgba(0,0,0,0.12)]"
       >
@@ -70,7 +67,6 @@
       </div>
 
     </div>
-  </div>
 
   <DeliveryTrackingModal
     :open="trackingOpen"

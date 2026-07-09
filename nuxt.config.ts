@@ -12,6 +12,8 @@ export default defineNuxtConfig({
     /** Telegram Bot — ตั้งใน .env: NUXT_TELEGRAM_BOT_TOKEN และ NUXT_TELEGRAM_CHAT_ID */
     telegramBotToken: '',
     telegramChatId: '',
+    /** LINE Messaging API — ตั้งใน .env: NUXT_LINE_CHANNEL_ACCESS_TOKEN */
+    lineChannelAccessToken: '',
     public: {
       /** Supabase — ตั้งใน .env: NUXT_PUBLIC_SUPABASE_URL และ NUXT_PUBLIC_SUPABASE_ANON_KEY */
       supabaseUrl: '',

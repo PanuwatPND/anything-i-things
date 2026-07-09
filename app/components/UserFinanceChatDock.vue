@@ -236,7 +236,7 @@ const hasTabBar = computed(() => {
 
 const dockBottom = computed(() =>
   hasTabBar.value
-    ? "calc(env(safe-area-inset-bottom) + 5.75rem)"
+    ? "calc(env(safe-area-inset-bottom) + 4.5rem)"
     : "calc(env(safe-area-inset-bottom) + 1.25rem)",
 );
 

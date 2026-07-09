@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-slate-100 px-4 pb-32 pt-2 text-slate-900"
-  >
-    <div class="mx-auto w-full max-w-md space-y-4">
+  <div class="mx-auto w-full max-w-md space-y-4">
       <div
         class="rounded-3xl bg-white p-5 text-slate-900 shadow-[0_8px_28px_-12px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.03]"
       >
@@ -219,7 +216,6 @@
       </div>
 
     </div>
-  </div>
 </template>
 
 <script setup lang="ts">

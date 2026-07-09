@@ -79,6 +79,22 @@ export default defineEventHandler(async (event) => {
     .filter(Boolean)
     .join("\n");
 
-  await sendTelegram(lines);
+  const lineText = lines
+    .replace(/<b>/g, "")
+    .replace(/<\/b>/g, "")
+    .replace(/⚠️ <b>สลิปซ้ำ — ตรวจด้วยมือ<\/b>/, "⚠️ สลิปซ้ำ — ตรวจด้วยมือ");
+
+  const sb = serverSupabase(event);
+  const { data: settingsData } = await sb.from("settings").select("key, value").catch(() => ({ data: null }));
+  const map = Object.fromEntries((settingsData ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
+  const notifyTelegram = map["notify_telegram"] !== "false";
+  const notifyLine = map["notify_line"] === "true";
+  const lineUserIds = (map["line_user_ids"] ?? "").split(",").filter(Boolean);
+
+  await Promise.all([
+    notifyTelegram ? sendTelegram(lines) : Promise.resolve(),
+    notifyLine ? sendLine(lineText, lineUserIds) : Promise.resolve(),
+  ]);
+
   return { ok: true, duplicate };
 });

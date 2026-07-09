@@ -20,13 +20,24 @@ function thaiTime() {
 }
 
 function row(label: string, value: string) {
-  return `${label.padEnd(6, " ")}${value}`;
+  return `${label.padEnd(6, " ")}${value}`;
+}
+
+async function getNotifySettings(event: Parameters<typeof serverSupabase>[0]) {
+  const sb = serverSupabase(event);
+  const { data } = await sb.from("settings").select("key, value");
+  const map = Object.fromEntries((data ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
+  return {
+    telegram: map["notify_telegram"] !== "false",
+    line: map["notify_line"] === "true",
+    lineUserIds: (map["line_user_ids"] ?? "").split(",").filter(Boolean),
+  };
 }
 
 export default defineEventHandler(async (event) => {
   const b = await readBody<Body>(event);
 
-  const lines = [
+  const tgText = [
     b.houseNo ? `📦 <b>ออเดอร์ใหม่</b>                       ${b.houseNo}` : `📦 <b>ออเดอร์ใหม่</b>`,
     SEP,
     row("รายการ", `${b.itemName} × ${b.quantity}`),
@@ -39,6 +50,29 @@ export default defineEventHandler(async (event) => {
     .filter(Boolean)
     .join("\n");
 
-  await sendTelegram(lines);
+  const lineText = [
+    `📦 ออเดอร์ใหม่${b.houseNo ? `  ${b.houseNo}` : ""}`,
+    SEP,
+    `รายการ  ${b.itemName} × ${b.quantity}`,
+    `ยอด     ${b.amount.toLocaleString("th-TH")} ฿`,
+    b.buyerName ? `ลูกค้า  ${b.buyerName}` : null,
+    `สถานะ  ◔ รอชำระเงิน`,
+    SEP,
+    `⏲ ${thaiTime()}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const settings = await getNotifySettings(event).catch(() => ({
+    telegram: true,
+    line: false,
+    lineUserIds: [] as string[],
+  }));
+
+  await Promise.all([
+    settings.telegram ? sendTelegram(tgText) : Promise.resolve(),
+    settings.line ? sendLine(lineText, settings.lineUserIds) : Promise.resolve(),
+  ]);
+
   return { ok: true };
 });

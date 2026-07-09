@@ -10,8 +10,14 @@
         <UserTopHeader class="w-full px-4" />
       </div>
     </header>
-    <div :class="['min-h-screen', showHeader && 'user-layout-main-offset']">
-      <div>
+    <div
+      :class="[
+        'min-h-screen',
+        showHeader && 'user-layout-main-offset',
+        showTabBar && 'pb-[calc(env(safe-area-inset-bottom)+4.25rem)]',
+      ]"
+    >
+      <div class="px-4 py-2">
         <slot />
       </div>
     </div>
@@ -23,11 +29,10 @@
 <script setup lang="ts">
 const route = useRoute();
 const showHeader = computed(() => route.path !== "/user");
-const showTabBar = computed(() => !route.path.startsWith('/user/payment'));
+const showTabBar = computed(() => !route.path.startsWith("/user/payment"));
 </script>
 
 <style scoped>
-/* สูงรวม = safe-area + แถบ header — ต้องเท่ากับบล็อก fixed ด้านบน (ไม่บวกช่องเกินเพื่อกันแถบขาว) */
 .user-layout-main-offset {
   padding-top: calc(max(env(safe-area-inset-top), 0.5rem) + 4.75rem);
 }
