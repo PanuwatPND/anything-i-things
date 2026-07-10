@@ -1,3 +1,5 @@
+import { appendLineSettingId } from "../utils/line";
+
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody<{ events?: LineEvent[] }>(event);
@@ -8,35 +10,25 @@ export default defineEventHandler(async (event) => {
 
       const userId = src.userId;
       const groupId = src.groupId;
+      const roomId = src.roomId;
       const type = src.type;
 
-      console.log("[LINE webhook]", JSON.stringify({ type, userId, groupId }));
-
-      // เก็บ userId เข้า Supabase settings โดยอัตโนมัติ
-      if (!userId) continue;
+      console.log("[LINE webhook]", JSON.stringify({ type: evt.type, sourceType: type, userId, groupId, roomId }));
 
       try {
         const sb = serverSupabase(event);
-        const { data } = await sb
-          .from("settings")
-          .select("value")
-          .eq("key", "line_user_ids")
-          .maybeSingle();
 
-        const current: string[] = data?.value ? data.value.split(",").filter(Boolean) : [];
-        if (current.includes(userId)) continue;
-
-        const next = [...current, userId].join(",");
-        const { error } = await sb
-          .from("settings")
-          .upsert({ key: "line_user_ids", value: next, updated_at: new Date().toISOString() });
-        if (error) {
-          console.error("[LINE webhook] upsert failed:", error.message);
-        } else {
-          console.log("[LINE webhook] saved new userId:", userId);
+        // กลุ่ม / แชทหลายคน → เก็บ groupId หรือ roomId
+        if (groupId) {
+          await appendLineSettingId(sb, "line_group_ids", groupId);
+        } else if (roomId) {
+          await appendLineSettingId(sb, "line_group_ids", roomId);
+        } else if (userId && type === "user") {
+          // แชทส่วนตัวเท่านั้น
+          await appendLineSettingId(sb, "line_user_ids", userId);
         }
       } catch (err) {
-        console.error("[LINE webhook] save userId failed:", err);
+        console.error("[LINE webhook] save id failed:", err);
       }
     }
   } catch (err) {
@@ -48,9 +40,11 @@ export default defineEventHandler(async (event) => {
 });
 
 type LineEvent = {
+  type?: string;
   source?: {
     type?: string;
     userId?: string;
     groupId?: string;
+    roomId?: string;
   };
 };

@@ -89,11 +89,11 @@ export default defineEventHandler(async (event) => {
   const map = Object.fromEntries((settingsData ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
   const notifyTelegram = map["notify_telegram"] !== "false";
   const notifyLine = map["notify_line"] === "true";
-  const lineUserIds = (map["line_user_ids"] ?? "").split(",").filter(Boolean);
+  const lineRecipients = lineRecipientsFromSettings(map);
 
   await Promise.all([
     notifyTelegram ? sendTelegram(lines) : Promise.resolve(),
-    notifyLine ? sendLine(lineText, lineUserIds) : Promise.resolve(),
+    notifyLine ? sendLine(lineText, lineRecipients) : Promise.resolve(),
   ]);
 
   return { ok: true, duplicate };

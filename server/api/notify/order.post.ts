@@ -30,7 +30,7 @@ async function getNotifySettings(event: Parameters<typeof serverSupabase>[0]) {
   return {
     telegram: map["notify_telegram"] !== "false",
     line: map["notify_line"] === "true",
-    lineUserIds: (map["line_user_ids"] ?? "").split(",").filter(Boolean),
+    lineRecipients: lineRecipientsFromSettings(map),
   };
 }
 
@@ -66,12 +66,12 @@ export default defineEventHandler(async (event) => {
   const settings = await getNotifySettings(event).catch(() => ({
     telegram: true,
     line: false,
-    lineUserIds: [] as string[],
+    lineRecipients: [] as string[],
   }));
 
   await Promise.all([
     settings.telegram ? sendTelegram(tgText) : Promise.resolve(),
-    settings.line ? sendLine(lineText, settings.lineUserIds) : Promise.resolve(),
+    settings.line ? sendLine(lineText, settings.lineRecipients) : Promise.resolve(),
   ]);
 
   return { ok: true };
