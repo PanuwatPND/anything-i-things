@@ -51,26 +51,36 @@ function statusBadge(text: string, bg: string, color: string): FlexBox {
   };
 }
 
-function bubble(headerTitle: string, headerSub: string | undefined, headerColor: string, bodyRows: FlexBox[], badge: FlexBox): FlexBox {
-  const headerContents: FlexBox[] = [
+function orderHeader(title: string, houseNo?: string): FlexBox[] {
+  if (!houseNo) {
+    return [{ type: "text", text: title, color: "#ffffff", weight: "bold", size: "lg" }];
+  }
+  return [
     {
-      type: "text",
-      text: headerTitle,
-      color: "#ffffff",
-      weight: "bold",
-      size: "lg",
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        { type: "text", text: title, color: "#ffffff", weight: "bold", size: "lg", flex: 0 },
+        {
+          type: "text",
+          text: `บ้าน ${houseNo}`,
+          color: "#e2e8f0",
+          size: "sm",
+          weight: "bold",
+          align: "end",
+          flex: 1,
+        },
+      ],
     },
   ];
-  if (headerSub) {
-    headerContents.push({
-      type: "text",
-      text: headerSub,
-      color: "#cbd5e1",
-      size: "xs",
-      margin: "sm",
-    });
-  }
+}
 
+function bubble(
+  headerContents: FlexBox[],
+  headerColor: string,
+  bodyRows: FlexBox[],
+  badge: FlexBox,
+): FlexBox {
   return {
     type: "bubble",
     size: "mega",
@@ -108,6 +118,37 @@ function bubble(headerTitle: string, headerSub: string | undefined, headerColor:
   };
 }
 
+export type LineOrderItem = { name: string; quantity: number };
+
+/** ชื่อสั้นสำหรับคนส่งน้ำ */
+export function formatDeliveryItemLabel(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes("600")) return "ขนาดกลาง (600ml)";
+  if (n.includes("1500")) return "ขนาดใหญ่ (1500ml)";
+  return name;
+}
+
+function itemRows(lineItems: LineOrderItem[] | undefined, fallback: { itemName: string; quantity: number }): FlexBox[] {
+  if (lineItems?.length) {
+    return lineItems.map((item) =>
+      flexRow(formatDeliveryItemLabel(item.name), `× ${item.quantity} แพ็ค`),
+    );
+  }
+  return [flexRow("รายการ", `${fallback.itemName} × ${fallback.quantity}`)];
+}
+
+export function formatDeliveryItemsText(
+  lineItems: LineOrderItem[] | undefined,
+  fallback: { itemName: string; quantity: number },
+): string {
+  if (lineItems?.length) {
+    return lineItems
+      .map((item) => `${formatDeliveryItemLabel(item.name)} × ${item.quantity} แพ็ค`)
+      .join("\n");
+  }
+  return `${fallback.itemName} × ${fallback.quantity}`;
+}
+
 export function buildOrderFlexMessage(data: {
   id: string;
   itemName: string;
@@ -115,22 +156,26 @@ export function buildOrderFlexMessage(data: {
   amount: number;
   buyerName?: string;
   houseNo?: string;
+  lineItems?: LineOrderItem[];
 }) {
   const rows: FlexBox[] = [
     flexRow("เลขบิล", `#${data.id}`),
-    flexRow("รายการ", `${data.itemName} × ${data.quantity}`),
+    ...itemRows(data.lineItems, { itemName: data.itemName, quantity: data.quantity }),
     flexRow("ยอด", `${data.amount.toLocaleString("th-TH")} ฿`, "#0f172a"),
   ];
   if (data.buyerName) rows.push(flexRow("ลูกค้า", data.buyerName));
 
-  const altText = `ออเดอร์ใหม่ #${data.id} ${data.amount.toLocaleString("th-TH")} ฿`;
+  const itemsSummary = formatDeliveryItemsText(data.lineItems, {
+    itemName: data.itemName,
+    quantity: data.quantity,
+  });
+  const altText = `ออเดอร์ใหม่ #${data.id} ${itemsSummary} ${data.amount.toLocaleString("th-TH")} ฿`;
 
   return {
     type: "flex" as const,
     altText,
     contents: bubble(
-      "📦  ออเดอร์ใหม่",
-      data.houseNo ? `บ้าน ${data.houseNo}` : undefined,
+      orderHeader("📦  ออเดอร์ใหม่", data.houseNo),
       "#0f172a",
       rows,
       statusBadge("◔  รอชำระเงิน", "#fffbeb", "#b45309"),
@@ -142,15 +187,17 @@ export function buildPaymentFlexMessage(data: {
   id: string;
   itemName: string;
   amount: number;
+  quantity?: number;
   payerHint?: string | null;
   buyerName?: string;
   houseNo?: string;
   duplicate?: boolean;
+  lineItems?: LineOrderItem[];
 }) {
   const dup = data.duplicate === true;
   const rows: FlexBox[] = [
     flexRow("เลขบิล", `#${data.id}`),
-    flexRow("รายการ", data.itemName),
+    ...itemRows(data.lineItems, { itemName: data.itemName, quantity: data.quantity ?? 0 }),
     flexRow("ยอด", `${data.amount.toLocaleString("th-TH")} ฿`, dup ? "#be123c" : "#047857"),
   ];
   if (data.buyerName) rows.push(flexRow("ลูกค้า", data.buyerName));
@@ -164,8 +211,7 @@ export function buildPaymentFlexMessage(data: {
     type: "flex" as const,
     altText,
     contents: bubble(
-      dup ? "⚠️  สลิปซ้ำ" : "💳  ชำระเงินแล้ว",
-      data.houseNo ? `บ้าน ${data.houseNo}` : undefined,
+      orderHeader(dup ? "⚠️  สลิปซ้ำ" : "💳  ชำระเงินแล้ว", data.houseNo),
       dup ? "#9f1239" : "#065f46",
       rows,
       dup

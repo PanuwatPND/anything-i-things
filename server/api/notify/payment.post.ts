@@ -2,9 +2,11 @@ type Body = {
   id: string;
   itemName: string;
   amount: number;
+  quantity?: number;
   payerHint?: string | null;
   buyerName?: string;
   houseNo?: string;
+  lineItems?: LineOrderItem[];
 };
 
 /** in-memory cache — key = "amount:payerKey", value = timestamp ms */
@@ -64,11 +66,16 @@ export default defineEventHandler(async (event) => {
     ? `⚠️ <b>สลิปซ้ำ!</b>                       ${b.houseNo ?? ""}`
     : `💳 <b>ชำระเงินแล้ว</b>                       ${b.houseNo ?? ""}`;
 
+  const itemsText = formatDeliveryItemsText(b.lineItems, {
+    itemName: b.itemName,
+    quantity: b.quantity ?? 0,
+  });
+
   const lines = [
     header,
     SEP,
     row("บิล", `#${b.id}`),
-    row("รายการ", b.itemName),
+    ...itemsText.split("\n").map((line) => row("รายการ", line)),
     row("ยอด", `<b>${b.amount.toLocaleString("th-TH")} ฿</b>`),
     b.buyerName ? row("ลูกค้า", b.buyerName) : null,
     b.payerHint ? row("ผู้โอน", b.payerHint) : null,
@@ -83,10 +90,12 @@ export default defineEventHandler(async (event) => {
     id: b.id,
     itemName: b.itemName,
     amount: b.amount,
+    quantity: b.quantity,
     payerHint: b.payerHint,
     buyerName: b.buyerName,
     houseNo: b.houseNo,
     duplicate,
+    lineItems: b.lineItems,
   });
 
   let notifyTelegram = true;

@@ -304,9 +304,11 @@ const sendPaymentNotify = (r: NonNullable<typeof receipt.value>, payerHint?: str
       id: r.id,
       itemName: r.itemName,
       amount: r.amount,
+      quantity: r.quantity,
       payerHint,
       buyerName: user.value?.name,
       houseNo: user.value?.houseNo,
+      lineItems: r.lineItems,
     },
   });
 

@@ -5,6 +5,7 @@ type Body = {
   amount: number;
   buyerName?: string;
   houseNo?: string;
+  lineItems?: LineOrderItem[];
 };
 
 const SEP = "─────────────────";
@@ -37,10 +38,16 @@ async function getNotifySettings(event: Parameters<typeof serverSupabase>[0]) {
 export default defineEventHandler(async (event) => {
   const b = await readBody<Body>(event);
 
+  const itemsText = formatDeliveryItemsText(b.lineItems, {
+    itemName: b.itemName,
+    quantity: b.quantity,
+  });
+
   const tgText = [
-    b.houseNo ? `📦 <b>ออเดอร์ใหม่</b>                       ${b.houseNo}` : `📦 <b>ออเดอร์ใหม่</b>`,
+    b.houseNo ? `📦 <b>ออเดอร์ใหม่ บ้าน ${b.houseNo}</b>` : `📦 <b>ออเดอร์ใหม่</b>`,
     SEP,
-    row("รายการ", `${b.itemName} × ${b.quantity}`),
+    row("เลขบิล", `#${b.id}`),
+    ...itemsText.split("\n").map((line) => row("รายการ", line)),
     row("ยอด", `<b>${b.amount.toLocaleString("th-TH")} ฿</b>`),
     b.buyerName ? row("ลูกค้า", b.buyerName) : null,
     row("สถานะ", "◔ รอชำระเงิน"),

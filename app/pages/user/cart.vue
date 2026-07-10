@@ -176,6 +176,11 @@ const checkout = async () => {
       placeOrder(cartItem.id, cartItem.quantity);
     }
 
+    const lineItems = orderedItems.map((item) => ({
+      name: item.name,
+      quantity: item.quantity,
+    }));
+
     const newReceipt: WatershopReceipt = {
       id: `${Date.now()}${Math.floor(Math.random() * 100)}`.slice(-6),
       itemName: summaryName,
@@ -183,6 +188,7 @@ const checkout = async () => {
       amount: finalTotalAmount,
       createdAt: new Date().toISOString(),
       status: "pending",
+      lineItems,
     };
     addReceipt(newReceipt);
 
@@ -195,6 +201,7 @@ const checkout = async () => {
         amount: newReceipt.amount,
         buyerName: user.value?.name,
         houseNo: user.value?.houseNo,
+        lineItems,
       },
     }).catch(() => {});
 

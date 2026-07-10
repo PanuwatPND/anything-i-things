@@ -26,6 +26,8 @@ export type SlipVerification = {
   ocrMessage?: string;
 };
 
+export type OrderLineItem = { name: string; quantity: number };
+
 export type WatershopReceipt = {
   id: string;
   itemName: string;
@@ -35,6 +37,8 @@ export type WatershopReceipt = {
   status: BillStatusCode;
   slipDataUrl?: string;
   slipVerification?: SlipVerification;
+  /** รายการแยกตามขนาฬ — ใช้แจ้งเตือนคนส่งน้ำ */
+  lineItems?: OrderLineItem[];
 };
 
 export const useWatershopReceipts = () => {
@@ -95,6 +99,7 @@ export const useWatershopReceipts = () => {
         createdAt: row.created_at,
         slipDataUrl: localItem?.slipDataUrl,
         slipVerification: localItem?.slipVerification,
+        lineItems: localItem?.lineItems,
       };
     });
 
