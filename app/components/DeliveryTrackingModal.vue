@@ -22,36 +22,33 @@
           </button>
         </div>
 
-        <div class="relative h-80 bg-[#e6e7ea]">
-          <svg class="absolute inset-0 h-full w-full" viewBox="0 0 360 320" fill="none">
-            <path d="M0 65h360M0 138h360M0 210h360M76 0v320M164 0v320M252 0v320" stroke="#f3f4f6" />
-            <path
-              d="M255 48C248 70 230 83 220 96C199 121 206 145 191 164C172 188 138 194 128 218C120 236 133 253 128 270"
-              stroke="#1d6fff"
-              stroke-width="4"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <circle cx="256" cy="46" r="11" fill="#1d6fff" />
-            <circle cx="256" cy="46" r="4" fill="#fff" />
-            <circle cx="128" cy="272" r="11" fill="#1d6fff" />
-            <circle cx="128" cy="272" r="4" fill="#fff" />
-          </svg>
-          <button
-            type="button"
-            class="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1.5 text-sm text-slate-700 shadow"
-          >
-            ☰
-          </button>
+        <div class="relative h-80 bg-slate-100">
+          <VillageSatelliteMap :lat="coords.lat" :lng="coords.lng" />
         </div>
 
         <div class="space-y-2 px-4 py-3 text-xs text-slate-600">
           <p>
             สถานะ: <span class="font-semibold text-violet-700">กำลังดำเนินการจัดส่ง</span>
           </p>
-          <p>
-            จุดรับ: คลังสินค้า LunarWater · ปลายทาง: ลูกค้า
-          </p>
+          <div v-if="houseNo" class="flex items-center justify-between gap-2">
+            <p>
+              บ้านเลขที่ <span class="font-semibold text-slate-900">{{ houseNo }}</span>
+              <span
+                class="ml-1.5 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                :class="coords.confirmed ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'"
+              >
+                {{ coords.confirmed ? "ปักหมุดยืนยันแล้ว" : "ตำแหน่งโดยประมาณ (ทางเข้าหมู่บ้าน)" }}
+              </span>
+            </p>
+            <a
+              :href="satelliteUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="shrink-0 rounded-full border border-slate-200 px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-100"
+            >
+              เปิดนำทาง
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -59,16 +56,22 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  open: boolean
-  title: string
-}>()
+import { googleMapsLinkUrl, resolveHouseCoords } from "~/utils/villageMap";
+
+const props = defineProps<{
+  open: boolean;
+  title: string;
+  houseNo?: string;
+}>();
 
 const emit = defineEmits<{
-  (event: 'close'): void
-}>()
+  (event: "close"): void;
+}>();
+
+const coords = computed(() => resolveHouseCoords(props.houseNo));
+const satelliteUrl = computed(() => googleMapsLinkUrl(coords.value.lat, coords.value.lng));
 
 const onClose = () => {
-  emit('close')
-}
+  emit("close");
+};
 </script>

@@ -71,6 +71,7 @@
   <DeliveryTrackingModal
     :open="trackingOpen"
     :title="trackingTitle"
+    :house-no="user?.houseNo"
     @close="trackingOpen = false"
   />
 </template>
@@ -89,6 +90,7 @@ definePageMeta({
 
 const router = useRouter();
 const { formatInt } = useFormatNumber();
+const { user } = useAuth();
 const { orderedReceipts, loadReceipts } = useWatershopReceipts();
 const trackingOpen = ref(false);
 const trackingTitle = ref("รายการจัดส่ง");
