@@ -11,7 +11,7 @@
             v-model="houseInput"
             type="text"
             inputmode="numeric"
-            placeholder="เช่น 12"
+            placeholder="กรอกบ้านเลขที่ เช่น 68"
             class="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none ring-slate-900/10 focus:ring-2"
           />
         </div>

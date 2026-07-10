@@ -13,7 +13,7 @@
             เข้าสู่ระบบ
           </h1>
           <p class="mt-2 text-sm text-slate-600">
-            เริ่มใช้งานได้ทันที เลือกบทบาทก่อนเข้าสู่ระบบ
+            สั่งน้ำดื่มในหมู่บ้าน — เข้าใช้งานได้ทันที
           </p>
         </div>
         <div class="grid h-11 w-11 place-items-center rounded-2xl bg-slate-100 text-slate-700">
@@ -50,34 +50,21 @@
           />
         </div>
 
-        <div>
-          <p class="mb-2 text-sm font-medium text-slate-700">เลือกบทบาท</p>
-          <div class="grid grid-cols-2 gap-2">
-            <label
-              class="flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition"
-              :class="
-                role === 'user'
-                  ? 'border-slate-900 bg-slate-900 text-white shadow-[0_8px_18px_rgba(15,23,42,0.2)]'
-                  : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400'
-              "
-            >
-              <input v-model="role" type="radio" value="user" />
-              <span>ผู้ใช้งาน</span>
-            </label>
-            <label
-              class="flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition"
-              :class="
-                role === 'admin'
-                  ? 'border-slate-900 bg-slate-900 text-white shadow-[0_8px_18px_rgba(15,23,42,0.2)]'
-                  : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400'
-              "
-            >
-              <input v-model="role" type="radio" value="admin" />
-              <span>ผู้ดูแลระบบ</span>
-            </label>
-          </div>
-          <p class="mt-2 text-[11px] text-slate-500">
-            บทบาทผู้ใช้งานจะเข้าสู่หน้าสั่งน้ำโดยตรง
+        <div v-if="!email.trim()">
+          <label class="mb-1 block text-sm font-medium text-slate-700" for="houseNo">
+            บ้านเลขที่ <span class="text-rose-600">*</span>
+          </label>
+          <input
+            id="houseNo"
+            v-model="houseNo"
+            type="text"
+            inputmode="numeric"
+            autocomplete="street-address"
+            class="w-full rounded-xl border border-slate-300/80 bg-slate-50 px-3 py-2.5 text-slate-800 outline-none ring-black/20 transition focus:border-slate-500 focus:bg-white focus:ring"
+            placeholder="เช่น 12"
+          />
+          <p class="mt-1.5 text-[11px] text-slate-500">
+            ไม่ใส่อีเมล — ระบุบ้านเลขที่เพื่อจัดส่งและแจ้งออเดอร์
           </p>
         </div>
 
@@ -107,18 +94,23 @@ const { login } = useAuth()
 
 const email = ref('')
 const password = ref('')
-const role = ref<'user' | 'admin'>('user')
+const houseNo = ref('')
 const isLoading = ref(false)
 const errorMessage = ref('')
 
 const onSubmit = async () => {
   errorMessage.value = ''
+  if (!email.value.trim() && !houseNo.value.trim()) {
+    errorMessage.value = 'กรุณาระบุบ้านเลขที่ หรือกรอกอีเมล'
+    return
+  }
   isLoading.value = true
 
   try {
-    await login(email.value, password.value, role.value)
-    const destination = role.value === 'admin' ? '/admin' : '/user/water'
-    await router.push(`/loading?to=${encodeURIComponent(destination)}`)
+    await login(email.value, password.value, 'user', {
+      houseNo: houseNo.value.trim(),
+    })
+    await router.push(`/loading?to=${encodeURIComponent('/user/water')}`)
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : 'เข้าสู่ระบบไม่สำเร็จ'
   } finally {

@@ -8,7 +8,7 @@ export default defineNuxtRouteMiddleware(() => {
   hydrate()
 
   if (!isLoggedIn.value) {
-    return navigateTo('/login')
+    return navigateTo(ADMIN_LOGIN_PATH)
   }
 
   if (user.value?.role !== 'admin') {

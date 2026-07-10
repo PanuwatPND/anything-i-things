@@ -43,12 +43,24 @@ export const useAuth = () => {
     }
   }
 
-  const login = async (email: string, _password: string, role: 'user' | 'admin') => {
+  const login = async (
+    email: string,
+    _password: string,
+    role: 'user' | 'admin',
+    options?: { houseNo?: string },
+  ) => {
     const normalizedEmail = email.trim().toLowerCase()
     const fallbackEmail = `${role}-guest@watershop.local`
     const safeEmail = normalizedEmail || fallbackEmail
+    const trimmedHouse = options?.houseNo?.trim() ?? ''
 
-    const nextUser: AuthUser = { email: safeEmail, role, name: '', houseNo: '', avatar: '' }
+    const nextUser: AuthUser = {
+      email: safeEmail,
+      role,
+      name: '',
+      houseNo: trimmedHouse,
+      avatar: '',
+    }
     user.value = nextUser
 
     if (import.meta.client) {

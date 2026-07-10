@@ -1035,7 +1035,7 @@ const onInput = (id: string, event: Event) => {
 
 const onLogout = () => {
   logout();
-  router.push("/login");
+  router.push(ADMIN_LOGIN_PATH);
 };
 
 const formatReceiptDate = (iso: string) => {

@@ -101,6 +101,9 @@ const displayName = computed(() => {
   const profileName = user.value?.name?.trim() ?? "";
   if (profileName) return profileName;
 
+  const house = user.value?.houseNo?.trim() ?? "";
+  if (house) return `บ้าน ${house}`;
+
   const email = user.value?.email ?? "";
   const local = email.split("@")[0] ?? "";
   if (!local) return "ผู้ใช้";
