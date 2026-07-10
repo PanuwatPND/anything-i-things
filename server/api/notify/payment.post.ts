@@ -89,12 +89,20 @@ export default defineEventHandler(async (event) => {
     duplicate,
   });
 
-  const sb = serverSupabase(event);
-  const { data: settingsData } = await sb.from("settings").select("key, value").catch(() => ({ data: null }));
-  const map = Object.fromEntries((settingsData ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
-  const notifyTelegram = map["notify_telegram"] !== "false";
-  const notifyLine = map["notify_line"] === "true";
-  const lineRecipients = lineRecipientsFromSettings(map);
+  let notifyTelegram = true;
+  let notifyLine = false;
+  let lineRecipients: string[] = [];
+
+  try {
+    const sb = serverSupabase(event);
+    const { data: settingsData } = await sb.from("settings").select("key, value");
+    const map = Object.fromEntries((settingsData ?? []).map((r: { key: string; value: string }) => [r.key, r.value]));
+    notifyTelegram = map["notify_telegram"] !== "false";
+    notifyLine = map["notify_line"] === "true";
+    lineRecipients = lineRecipientsFromSettings(map);
+  } catch (err) {
+    console.error("[notify/payment] settings read failed:", err);
+  }
 
   await Promise.all([
     notifyTelegram ? sendTelegram(lines) : Promise.resolve(),

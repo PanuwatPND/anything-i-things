@@ -363,10 +363,7 @@ const verifyAndConfirm = async () => {
     }
 
     // เช็ค duplicate ก่อน — ถ้าซ้ำให้ block ทันที
-    const notifyRes = await sendPaymentNotify(r, ocrResult.payerHint).catch(() => ({
-      ok: true,
-      duplicate: false,
-    }));
+    const notifyRes = await sendPaymentNotify(r, ocrResult.payerHint);
 
     if (notifyRes.duplicate) {
       throw new Error(
