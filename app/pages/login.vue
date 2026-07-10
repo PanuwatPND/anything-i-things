@@ -61,7 +61,7 @@
             inputmode="numeric"
             autocomplete="street-address"
             class="w-full rounded-xl border border-slate-300/80 bg-slate-50 px-3 py-2.5 text-slate-800 outline-none ring-black/20 transition focus:border-slate-500 focus:bg-white focus:ring"
-            placeholder="เช่น 12"
+            placeholder="กรอกบ้านเลขที่ เช่น 68"
           />
           <p class="mt-1.5 text-[11px] text-slate-500">
             ไม่ใส่อีเมล — ระบุบ้านเลขที่เพื่อจัดส่งและแจ้งออเดอร์
