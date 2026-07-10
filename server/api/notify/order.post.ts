@@ -50,18 +50,7 @@ export default defineEventHandler(async (event) => {
     .filter(Boolean)
     .join("\n");
 
-  const lineText = [
-    `📦 ออเดอร์ใหม่${b.houseNo ? `  ${b.houseNo}` : ""}`,
-    SEP,
-    `รายการ  ${b.itemName} × ${b.quantity}`,
-    `ยอด     ${b.amount.toLocaleString("th-TH")} ฿`,
-    b.buyerName ? `ลูกค้า  ${b.buyerName}` : null,
-    `สถานะ  ◔ รอชำระเงิน`,
-    SEP,
-    `⏲ ${thaiTime()}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const lineMessage = buildOrderFlexMessage(b);
 
   const settings = await getNotifySettings(event).catch(() => ({
     telegram: true,
@@ -71,7 +60,7 @@ export default defineEventHandler(async (event) => {
 
   await Promise.all([
     settings.telegram ? sendTelegram(tgText) : Promise.resolve(),
-    settings.line ? sendLine(lineText, settings.lineRecipients) : Promise.resolve(),
+    settings.line ? sendLineMessages(settings.lineRecipients, [lineMessage]) : Promise.resolve(),
   ]);
 
   return { ok: true };

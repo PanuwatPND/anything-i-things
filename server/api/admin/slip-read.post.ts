@@ -28,8 +28,14 @@ type GeminiGenerateResponse = {
 /** ~600 KB หลัง base64 — ฝั่ง client ควรย่อรูปก่อนส่งแล้ว */
 const MAX_IMAGE_CHARS = 900_000;
 
-/** ถ้า primary model 503 จะลองตามลำดับนี้ */
-const FALLBACK_MODELS = ["gemini-1.5-flash", "gemini-1.5-pro-vision-latest"];
+/** ถ้า primary model ล้มเหลว จะลองตามลำดับนี้ (ทดสอบแล้วใช้ได้บน free tier) */
+const FALLBACK_MODELS = [
+  "gemini-flash-latest",
+  "gemini-flash-lite-latest",
+];
+
+/** รอแล้วลองใหม่ต่อโมเดล (ms) */
+const RETRY_DELAYS_MS = [700, 1400, 2200];
 
 /** บังคับให้ Gemini ตอบเป็น JSON ตาม schema (ลดกรณีตอบเป็นข้อความ/ markdown) */
 const SLIP_RESPONSE_SCHEMA = {
@@ -63,7 +69,35 @@ async function callGeminiModel(
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
     body,
+    timeout: 45_000,
   });
+}
+
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+/** ลองซ้ำเมื่อ Gemini ตอบ 503/429 ก่อนเปลี่ยนโมเดล */
+async function callGeminiModelWithRetry(
+  model: string,
+  apiKey: string,
+  body: object,
+): Promise<GeminiGenerateResponse> {
+  let lastErr: unknown;
+
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      return await callGeminiModel(model, apiKey, body);
+    } catch (err) {
+      lastErr = err;
+      const status = fetchErrorStatus(err);
+      const retriable = status === 503 || status === 429;
+      if (!retriable || attempt >= RETRY_DELAYS_MS.length) throw err;
+      await sleep(RETRY_DELAYS_MS[attempt]!);
+    }
+  }
+
+  throw lastErr;
 }
 
 function sanitizeGeminiErrorMessage(raw: string): string {
@@ -233,7 +267,7 @@ ${hintLine}
 
   for (let i = 0; i < modelsToTry.length; i++) {
     try {
-      apiJson = await callGeminiModel(modelsToTry[i]!, apiKey, geminiBody);
+      apiJson = await callGeminiModelWithRetry(modelsToTry[i]!, apiKey, geminiBody);
       break;
     } catch (err: unknown) {
       const status = fetchErrorStatus(err);
@@ -248,8 +282,10 @@ ${hintLine}
             ? (err as { statusMessage: string }).statusMessage
             : "เรียก Gemini ไม่สำเร็จ";
 
-      // 503 = model overloaded — ลอง fallback ถ้ายังมี
-      if (status === 503 && i < modelsToTry.length - 1) continue;
+      const hasMoreModels = i < modelsToTry.length - 1;
+
+      // ลองโมเดลถัดไปเมื่อโมเดลนี้ไม่พร้อม / โควต้าเต็ม / ไม่มีโมเดลแล้ว
+      if (hasMoreModels && (status === 503 || status === 429 || status === 404)) continue;
 
       if (status === 503) {
         throw createError({

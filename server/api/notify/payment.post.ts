@@ -79,10 +79,15 @@ export default defineEventHandler(async (event) => {
     .filter(Boolean)
     .join("\n");
 
-  const lineText = lines
-    .replace(/<b>/g, "")
-    .replace(/<\/b>/g, "")
-    .replace(/⚠️ <b>สลิปซ้ำ — ตรวจด้วยมือ<\/b>/, "⚠️ สลิปซ้ำ — ตรวจด้วยมือ");
+  const lineMessage = buildPaymentFlexMessage({
+    id: b.id,
+    itemName: b.itemName,
+    amount: b.amount,
+    payerHint: b.payerHint,
+    buyerName: b.buyerName,
+    houseNo: b.houseNo,
+    duplicate,
+  });
 
   const sb = serverSupabase(event);
   const { data: settingsData } = await sb.from("settings").select("key, value").catch(() => ({ data: null }));
@@ -93,7 +98,7 @@ export default defineEventHandler(async (event) => {
 
   await Promise.all([
     notifyTelegram ? sendTelegram(lines) : Promise.resolve(),
-    notifyLine ? sendLine(lineText, lineRecipients) : Promise.resolve(),
+    notifyLine ? sendLineMessages(lineRecipients, [lineMessage]) : Promise.resolve(),
   ]);
 
   return { ok: true, duplicate };

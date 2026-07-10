@@ -29,18 +29,31 @@ export async function appendLineSettingId(
   else console.log(`[LINE] saved ${key}:`, id);
 }
 
-export async function sendLine(text: string, toIds: string[]): Promise<void> {
+type LineMessage =
+  | { type: "text"; text: string }
+  | { type: "flex"; altText: string; contents: unknown };
+
+export async function sendLineMessages(toIds: string[], messages: LineMessage[]): Promise<void> {
   const config = useRuntimeConfig();
   const token = String(config.lineChannelAccessToken ?? "").trim();
-  if (!token || toIds.length === 0) return;
+  if (!token || toIds.length === 0 || messages.length === 0) return;
 
   await Promise.all(
-    toIds.map((to) =>
-      $fetch(`${LINE_API}/push`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: { to, messages: [{ type: "text", text }] },
-      }).catch(() => {}),
-    ),
+    toIds.map(async (to) => {
+      try {
+        await $fetch(`${LINE_API}/push`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: { to, messages },
+        });
+      } catch (err) {
+        console.error("[LINE] push failed:", to, err);
+      }
+    }),
   );
+}
+
+/** @deprecated ใช้ sendLineMessages + Flex Message แทน */
+export async function sendLine(text: string, toIds: string[]): Promise<void> {
+  await sendLineMessages(toIds, [{ type: "text", text }]);
 }

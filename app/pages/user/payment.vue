@@ -225,7 +225,7 @@ const route = useRoute();
 const router = useRouter();
 const { formatInt } = useFormatNumber();
 const { user } = useAuth();
-const { receipts, loadReceipts, attachSlip, removeSlip, updateStatus } =
+const { receipts, loadReceipts, attachSlip, removeSlip, updateStatus, updateSlipVerification } =
   useWatershopReceipts();
 const { runOcr } = useSlipOcr();
 const { alert } = useAlertDialog();
@@ -297,6 +297,19 @@ const fetchErrorStatus = (e: unknown): number => {
   return 0;
 };
 
+const sendPaymentNotify = (r: NonNullable<typeof receipt.value>, payerHint?: string | null) =>
+  $fetch<{ ok: boolean; duplicate?: boolean }>("/api/notify/payment", {
+    method: "POST",
+    body: {
+      id: r.id,
+      itemName: r.itemName,
+      amount: r.amount,
+      payerHint,
+      buyerName: user.value?.name,
+      houseNo: user.value?.houseNo,
+    },
+  });
+
 const verifyAndConfirm = async () => {
   const r = receipt.value;
   if (!r?.slipDataUrl || verifying.value) return;
@@ -313,11 +326,28 @@ const verifyAndConfirm = async () => {
       ocrResult = await runOcr(r.id, parts, r.amount);
     } catch (fetchErr) {
       const status = fetchErrorStatus(fetchErr);
-      // OCR service ไม่ได้ตั้งค่า — ให้ admin ตรวจเองทีหลัง
+      // OCR ไม่พร้อม — บันทึกชำระแล้ว แจ้ง admin ตรวจสลิปทีหลัง
       if (status === 503) {
+        updateSlipVerification(r.id, {
+          amountFromOcr: false,
+          ocrMessage: "ระบบตรวจสลิปไม่พร้อม — รอแอดมินตรวจ",
+          ocrReadAt: new Date().toISOString(),
+        });
+        await sendPaymentNotify(r, null).catch(() => {});
         updateStatus(r.id, "paid");
+        await alert({
+          title: "บันทึกการชำระแล้ว",
+          description: `ระบบตรวจสลิปอัตโนมัติไม่พร้อมชั่วคราว — ยอด ${formatInt(r.amount)} ฿ ถูกบันทึกแล้ว แอดมินจะตรวจสลิปให้ภายหลัง`,
+          confirmText: "ดูบิล",
+        });
         await router.push("/user/bills");
         return;
+      }
+      if (status === 429) {
+        throw new Error(
+          fetchErrorMessage(fetchErr) ||
+            "ระบบตรวจสลิปใช้งานเกินโควต้า — รอ 1–2 นาทีแล้วลองอีกครั้ง",
+        );
       }
       throw new Error(fetchErrorMessage(fetchErr) || "ตรวจสอบสลิปไม่สำเร็จ");
     }
@@ -333,20 +363,10 @@ const verifyAndConfirm = async () => {
     }
 
     // เช็ค duplicate ก่อน — ถ้าซ้ำให้ block ทันที
-    const notifyRes = await $fetch<{ ok: boolean; duplicate?: boolean }>(
-      "/api/notify/payment",
-      {
-        method: "POST",
-        body: {
-          id: r.id,
-          itemName: r.itemName,
-          amount: r.amount,
-          payerHint: ocrResult.payerHint,
-          buyerName: user.value?.name,
-          houseNo: user.value?.houseNo,
-        },
-      },
-    ).catch(() => ({ ok: true, duplicate: false }));
+    const notifyRes = await sendPaymentNotify(r, ocrResult.payerHint).catch(() => ({
+      ok: true,
+      duplicate: false,
+    }));
 
     if (notifyRes.duplicate) {
       throw new Error(
