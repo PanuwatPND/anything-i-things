@@ -78,7 +78,11 @@
             โอนเงินแล้วแนบสลิปด้านล่าง
           </p>
 
-          <div class="mt-4 space-y-2">
+          <div class="mt-4 space-y-4">
+            <ClientOnly>
+              <PromptPayQr v-if="receipt.amount > 0" :amount="receipt.amount" />
+            </ClientOnly>
+
             <div
               class="flex items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3"
             >
@@ -88,11 +92,10 @@
                 >
                   PromptPay
                 </p>
-                <!-- เปลี่ยนเป็นเบอร์จริงที่นี่ -->
                 <p
                   class="mt-0.5 text-lg font-bold tabular-nums tracking-wide text-slate-900"
                 >
-                  {{ PROMPTPAY_NUMBER }}
+                  {{ PROMPTPAY_DISPLAY }}
                   <span class="block text-xs font-normal text-slate-500/50">นายภานุวัฒน์ เพชรสีเขียว</span>
                 </p>
               </div>
@@ -212,14 +215,15 @@ import {
   readFileAsDataUrl,
   slipImagePartsFromDataUrl,
 } from "~/utils/slipImageForOcr";
+import { PROMPTPAY_DISPLAY, PROMPTPAY_PHONE } from "~/utils/promptPay";
 
 definePageMeta({
   layout: "user",
   middleware: "auth",
 });
 
-// เปลี่ยนเป็นเบอร์ PromptPay จริงตรงนี้
-const PROMPTPAY_NUMBER = "095-236-7130";
+// เบอร์ PromptPay — แก้ที่ app/utils/promptPay.ts
+const PROMPTPAY_NUMBER = PROMPTPAY_DISPLAY;
 
 const route = useRoute();
 const router = useRouter();
@@ -246,7 +250,7 @@ const receipt = computed(() => {
 const copyPromptPay = async () => {
   if (!import.meta.client) return;
   try {
-    await navigator.clipboard.writeText(PROMPTPAY_NUMBER);
+    await navigator.clipboard.writeText(PROMPTPAY_PHONE);
     copied.value = true;
     setTimeout(() => (copied.value = false), 2000);
   } catch {

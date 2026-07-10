@@ -34,17 +34,8 @@
                   {{ formatDate(r.createdAt) }} ·
                   {{ formatInt(r.quantity) }} ชิ้น
                 </p>
-                <button
-                  v-if="statusOf(r).code === 'shipping'"
-                  type="button"
-                  class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold underline underline-offset-2"
-                  :class="statusClass(statusOf(r).code)"
-                  @click.stop="openTracking(r)"
-                >
-                  {{ statusOf(r).label }} · ดูแผนที่
-                </button>
                 <span
-                  v-else-if="statusOf(r).code === 'pending'"
+                  v-if="statusOf(r).code === 'pending'"
                   class="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold"
                   :class="statusClass(statusOf(r).code)"
                 >
@@ -67,13 +58,6 @@
       </div>
 
     </div>
-
-  <DeliveryTrackingModal
-    :open="trackingOpen"
-    :title="trackingTitle"
-    :house-no="user?.houseNo"
-    @close="trackingOpen = false"
-  />
 </template>
 
 <script setup lang="ts">
@@ -90,10 +74,7 @@ definePageMeta({
 
 const router = useRouter();
 const { formatInt } = useFormatNumber();
-const { user } = useAuth();
 const { orderedReceipts, loadReceipts } = useWatershopReceipts();
-const trackingOpen = ref(false);
-const trackingTitle = ref("รายการจัดส่ง");
 
 onMounted(() => {
   loadReceipts();
@@ -119,11 +100,6 @@ const statusClass = (code: BillStatusCode) => {
   if (code === "shipping") return "bg-violet-100 text-violet-700";
   if (code === "delivered") return "bg-emerald-100 text-emerald-700";
   return "bg-rose-100 text-rose-700";
-};
-
-const openTracking = (receipt: WatershopReceipt) => {
-  trackingTitle.value = receipt.itemName;
-  trackingOpen.value = true;
 };
 
 const formatDate = (iso: string) => {

@@ -17,8 +17,13 @@
     "apexcharts": "^5.11.0",
     "leaflet": "^1.9.4",
     "nuxt": "^4.4.5",
+    "promptpay-qr": "^0.5.0",
+    "qrcode": "^1.5.4",
     "vue": "^3.5.33",
     "vue-router": "^5.0.6",
     "vue3-apexcharts": "^1.11.1"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.6"
   }
 }

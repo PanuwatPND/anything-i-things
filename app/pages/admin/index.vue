@@ -25,11 +25,13 @@
               {{
                 activeTab === "orders"
                   ? "ออเดอร์ทั้งหมด"
-                  : activeTab === "stock"
-                    ? "จัดการสต็อกน้ำ"
-                    : activeTab === "slips"
-                      ? "สลิป / ใบเสร็จ"
-                      : "ตรวจสอบสลิป"
+                  : activeTab === "map"
+                    ? "แผนที่จัดส่ง"
+                    : activeTab === "stock"
+                      ? "จัดการสต็อกน้ำ"
+                      : activeTab === "slips"
+                        ? "สลิป / ใบเสร็จ"
+                        : "ตรวจสอบสลิป"
               }}
             </h1>
             <p class="mt-1 truncate text-sm text-slate-500">
@@ -46,7 +48,7 @@
         </div>
 
         <div
-          class="mt-4 grid grid-cols-4 gap-1 rounded-2xl bg-slate-100/90 p-1 ring-1 ring-slate-200/80"
+          class="mt-4 flex gap-1 overflow-x-auto rounded-2xl bg-slate-100/90 p-1 ring-1 ring-slate-200/80 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           role="tablist"
           aria-label="เมนูแอดมิน"
         >
@@ -54,7 +56,7 @@
             type="button"
             role="tab"
             :aria-selected="activeTab === 'orders'"
-            class="rounded-xl py-2 text-center text-xs font-semibold transition sm:text-sm"
+            class="shrink-0 rounded-xl px-3 py-2 text-center text-xs font-semibold transition sm:text-sm"
             :class="
               activeTab === 'orders'
                 ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80'
@@ -67,8 +69,22 @@
           <button
             type="button"
             role="tab"
+            :aria-selected="activeTab === 'map'"
+            class="shrink-0 rounded-xl px-3 py-2 text-center text-xs font-semibold transition sm:text-sm"
+            :class="
+              activeTab === 'map'
+                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80'
+                : 'text-slate-600 hover:text-slate-900'
+            "
+            @click="activeTab = 'map'"
+          >
+            แผนที่
+          </button>
+          <button
+            type="button"
+            role="tab"
             :aria-selected="activeTab === 'stock'"
-            class="rounded-xl py-2 text-center text-xs font-semibold transition sm:text-sm"
+            class="shrink-0 rounded-xl px-3 py-2 text-center text-xs font-semibold transition sm:text-sm"
             :class="
               activeTab === 'stock'
                 ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80'
@@ -82,7 +98,7 @@
             type="button"
             role="tab"
             :aria-selected="activeTab === 'slips'"
-            class="rounded-xl py-2 text-center text-xs font-semibold transition sm:text-sm"
+            class="shrink-0 rounded-xl px-3 py-2 text-center text-xs font-semibold transition sm:text-sm"
             :class="
               activeTab === 'slips'
                 ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80'
@@ -96,7 +112,7 @@
             type="button"
             role="tab"
             :aria-selected="activeTab === 'verify'"
-            class="rounded-xl py-2 text-center text-xs font-semibold transition sm:text-sm"
+            class="shrink-0 rounded-xl px-3 py-2 text-center text-xs font-semibold transition sm:text-sm"
             :class="
               activeTab === 'verify'
                 ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80'
@@ -230,13 +246,46 @@
                 >
                   {{ s.label }}
                 </button>
+                <button
+                  v-if="o.houseNo && (o.status === 'paid' || o.status === 'shipping')"
+                  type="button"
+                  class="rounded-full bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white transition active:scale-95"
+                  @click="goPinHouse(o.houseNo)"
+                >
+                  📍 ปักหมุด
+                </button>
               </div>
             </li>
           </ul>
         </section>
       </template>
 
-      <template v-if="activeTab === 'stock'">
+      <template v-else-if="activeTab === 'map'">
+        <section
+          class="rounded-3xl bg-white p-5 shadow-[0_8px_28px_-12px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.03]"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs text-slate-500">
+              ปักหมุดบ้านลูกค้า · ดูเส้นทางจัดส่ง
+            </p>
+            <button
+              type="button"
+              :disabled="ordersLoading"
+              class="shrink-0 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+              @click="loadAdminOrders"
+            >
+              {{ ordersLoading ? "..." : "รีเฟรช" }}
+            </button>
+          </div>
+          <AdminDeliveryMap
+            ref="deliveryMapRef"
+            class="mt-3"
+            :orders="deliveryMapOrders"
+          />
+        </section>
+      </template>
+
+      <template v-else-if="activeTab === 'stock'">
         <section
           class="rounded-3xl bg-white p-5 shadow-[0_8px_28px_-12px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.03]"
         >
@@ -722,7 +771,8 @@ const {
 } = useWatershopReceipts();
 
 const { runOcr } = useSlipOcr();
-const activeTab = ref<"orders" | "stock" | "slips" | "verify">("orders");
+const activeTab = ref<"orders" | "map" | "stock" | "slips" | "verify">("orders");
+const deliveryMapRef = ref<{ startPinForHouse: (houseNo: string) => void } | null>(null);
 
 // ──────────────── Admin Orders ────────────────
 
@@ -799,6 +849,23 @@ const filteredAdminOrders = computed(() =>
     : adminOrders.value.filter((o) => o.status === orderFilter.value),
 );
 
+const deliveryMapOrders = computed(() =>
+  adminOrders.value
+    .filter((o) => o.houseNo && (o.status === "paid" || o.status === "shipping"))
+    .map((o) => ({
+      id: o.id,
+      houseNo: o.houseNo,
+      itemName: o.itemName,
+      quantity: o.quantity,
+      status: o.status as "paid" | "shipping",
+    })),
+);
+
+const goPinHouse = (houseNo: string) => {
+  activeTab.value = "map";
+  nextTick(() => deliveryMapRef.value?.startPinForHouse(houseNo));
+};
+
 const orderStatusClass = (status: BillStatusCode) => {
   const map: Record<BillStatusCode, string> = {
     pending: "bg-amber-100 text-amber-800 ring-1 ring-amber-200",
@@ -845,7 +912,7 @@ if (import.meta.client) {
 watch(activeTab, (tab) => {
   if ((tab === "slips" || tab === "verify") && import.meta.client)
     loadReceipts();
-  if (tab === "orders" && import.meta.client)
+  if ((tab === "orders" || tab === "map") && import.meta.client)
     loadAdminOrders();
 });
 
