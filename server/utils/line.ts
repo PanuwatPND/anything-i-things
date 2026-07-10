@@ -6,10 +6,23 @@ function splitIds(value: string | undefined): string[] {
   return (value ?? "").split(",").filter(Boolean);
 }
 
-/** รวม group/room + user สำหรับส่งแจ้งเตือน */
+function settingOn(map: Record<string, string>, key: string, defaultValue: boolean): boolean {
+  const v = map[key];
+  if (v === undefined || v === "") return defaultValue;
+  return v === "true";
+}
+
+/**
+ * เลือกปลายทาง LINE จาก settings:
+ * - line_notify_groups (default true) → ส่งเข้ากลุ่มใน line_group_ids
+ * - line_notify_users  (default false) → ส่งเข้าแชทส่วนตัวใน line_user_ids
+ */
 export function lineRecipientsFromSettings(map: Record<string, string>): string[] {
-  const groups = splitIds(map.line_group_ids);
-  const users = splitIds(map.line_user_ids);
+  const toGroups = settingOn(map, "line_notify_groups", true);
+  const toUsers = settingOn(map, "line_notify_users", false);
+
+  const groups = toGroups ? splitIds(map.line_group_ids) : [];
+  const users = toUsers ? splitIds(map.line_user_ids) : [];
   return [...new Set([...groups, ...users])];
 }
 

@@ -59,16 +59,18 @@ function orderHeader(title: string, houseNo?: string): FlexBox[] {
     {
       type: "box",
       layout: "horizontal",
+      alignItems: "center",
       contents: [
         { type: "text", text: title, color: "#ffffff", weight: "bold", size: "lg", flex: 0 },
         {
           type: "text",
           text: `บ้าน ${houseNo}`,
           color: "#e2e8f0",
-          size: "sm",
+          size: "lg",
           weight: "bold",
           align: "end",
           flex: 1,
+          gravity: "center",
         },
       ],
     },
