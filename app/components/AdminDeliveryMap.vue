@@ -82,6 +82,9 @@
     <!-- Legend -->
     <div class="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-semibold text-slate-600">
       <span class="inline-flex items-center gap-1">
+        <span class="h-2 w-2 rounded-full bg-orange-600" /> จ่ายทีหลัง
+      </span>
+      <span class="inline-flex items-center gap-1">
         <span class="h-2 w-2 rounded-full bg-blue-600" /> ชำระแล้ว
       </span>
       <span class="inline-flex items-center gap-1">
@@ -115,9 +118,21 @@
             <span class="ml-2 text-xs text-slate-500">{{ o.itemName }} × {{ o.quantity }}</span>
             <span
               class="ml-2 inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
-              :class="o.status === 'shipping' ? 'bg-violet-100 text-violet-700' : 'bg-blue-100 text-blue-700'"
+              :class="
+                o.status === 'shipping'
+                  ? 'bg-violet-100 text-violet-700'
+                  : o.status === 'pay_later'
+                    ? 'bg-orange-100 text-orange-700'
+                    : 'bg-blue-100 text-blue-700'
+              "
             >
-              {{ o.status === "shipping" ? "กำลังส่ง" : "ชำระแล้ว" }}
+              {{
+                o.status === "shipping"
+                  ? "กำลังส่ง"
+                  : o.status === "pay_later"
+                    ? "จ่ายทีหลัง"
+                    : "ชำระแล้ว"
+              }}
             </span>
           </div>
           <button
@@ -190,7 +205,7 @@ type DeliveryOrder = {
   houseNo: string;
   itemName: string;
   quantity: number;
-  status: "paid" | "shipping";
+  status: "paid" | "pay_later" | "shipping";
 };
 
 const props = defineProps<{
@@ -206,7 +221,9 @@ const draftPin = ref<{ lat: number; lng: number } | null>(null);
 const saveMessage = ref("");
 
 const deliveryOrders = computed(() =>
-  props.orders.filter((o) => o.houseNo && (o.status === "paid" || o.status === "shipping")),
+  props.orders.filter(
+    (o) => o.houseNo && (o.status === "paid" || o.status === "pay_later" || o.status === "shipping"),
+  ),
 );
 
 const deliveryMarkers = computed((): MapMarker[] => {
@@ -221,7 +238,12 @@ const deliveryMarkers = computed((): MapMarker[] => {
       lat: c.lat,
       lng: c.lng,
       label: `บ้าน ${o.houseNo}`,
-      color: o.status === "shipping" ? "#7c3aed" : "#2563eb",
+      color:
+        o.status === "shipping"
+          ? "#7c3aed"
+          : o.status === "pay_later"
+            ? "#ea580c"
+            : "#2563eb",
       confirmed: c.confirmed,
     });
   }

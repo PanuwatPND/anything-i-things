@@ -92,7 +92,7 @@
           เลือกจำนวนจากปุ่ม + / - แล้วกดเพิ่มลงตะกร้าได้ทันที
         </p>
         <div>
-          <p class="text-[11px] text-slate-400">!!! โปรโมชัน 3 แพ็ค 100 ฿</p>
+          <p class="text-[11px] text-slate-400">โปร 3 แพ็ค 100 ฿ (คละขนาดรวมกันได้)</p>
         </div>
         <div class="mt-4 space-y-3">
           <div
@@ -234,6 +234,7 @@ const {
   items,
   cartItems,
   totalCount: cartCount,
+  totalAmount: cartTotalFromShop,
   hydrateShop,
   ensureCatalog,
   addItem,
@@ -271,9 +272,7 @@ const todayTotalAmount = computed(() =>
 const todayOrderCount = computed(
   () => receipts.value.filter((r) => isToday(r.createdAt)).length,
 );
-const cartTotalAmount = computed(() =>
-  cartItems.value.reduce((sum, line) => sum + line.price * line.quantity, 0),
-);
+const cartTotalAmount = computed(() => cartTotalFromShop.value);
 
 const receiptProgress = computed(() =>
   Math.min((todayReceiptCount.value / 20) * 100, 100),

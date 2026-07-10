@@ -24,18 +24,18 @@ const CART_STORAGE_KEY = 'watershop-cart'
 export const WATER_CATALOG: DrinkItem[] = [
   {
     id: 'water-600ml',
-    name: 'น้ำดื่ม 600 ml',
+    name: 'น้ำดื่มฟอเรสต์ 600 ml',
     price: 35,
     stock: 60,
-    image: '/products/water-bottle.png',
-    bottlesPerPack: 6,
+    image: '/products/forest-600ml.png',
+    bottlesPerPack: 12,
   },
   {
     id: 'water-1500ml',
-    name: 'น้ำดื่ม 1500 ml',
+    name: 'น้ำดื่มฟอเรสต์ 1500 ml',
     price: 35,
     stock: 60,
-    image: '/products/water-bottle.png',
+    image: '/products/forest-1500ml.png',
     bottlesPerPack: 6,
   },
 ]
@@ -43,12 +43,18 @@ export const WATER_CATALOG: DrinkItem[] = [
 const cloneCatalog = (): DrinkItem[] => WATER_CATALOG.map((row) => ({ ...row }))
 const ALLOWED_IDS = new Set(WATER_CATALOG.map((item) => item.id))
 
-const getPackPrice = (quantity: number) => {
-  const safeQuantity = Math.max(1, Math.trunc(quantity))
+/** โปร 3 แพ็ค 100 ฿ — คละขนาดรวมกันได้ */
+export const getPackPrice = (quantity: number) => {
+  const safeQuantity = Math.trunc(quantity)
+  if (safeQuantity <= 0) return 0
   const packOfThree = Math.floor(safeQuantity / 3)
   const remaining = safeQuantity % 3
   return packOfThree * 100 + remaining * 35
 }
+
+export const PACK_UNIT_PRICE = 35
+export const PACK_PROMO_SIZE = 3
+export const PACK_PROMO_PRICE = 100
 
 export const useLocalWatershop = () => {
   const items = useState<DrinkItem[]>('watershop-catalog', () => cloneCatalog())
@@ -186,10 +192,7 @@ export const useLocalWatershop = () => {
 
     updateStock(id, target.stock - safeQuantity)
 
-    return {
-      itemName: target.name,
-      amount: getPackPrice(safeQuantity),
-    }
+    return { itemName: target.name }
   }
 
   const addItem = (item: Omit<CartItem, 'quantity'>, quantity: number) => {

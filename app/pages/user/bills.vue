@@ -24,8 +24,15 @@
             v-for="r in orderedReceipts"
             :key="r.id"
             class="rounded-xl border border-black/10 bg-slate-50 p-3 text-sm transition-all"
-            :class="{ 'cursor-pointer hover:bg-amber-50 hover:border-amber-200 active:scale-[0.99]': statusOf(r).code === 'pending' }"
-            @click="statusOf(r).code === 'pending' ? router.push(`/user/payment?id=${r.id}`) : undefined"
+            :class="{
+              'cursor-pointer hover:bg-amber-50 hover:border-amber-200 active:scale-[0.99]':
+                statusOf(r).code === 'pending' || statusOf(r).code === 'pay_later',
+            }"
+            @click="
+              statusOf(r).code === 'pending' || statusOf(r).code === 'pay_later'
+                ? router.push(`/user/payment?id=${r.id}`)
+                : undefined
+            "
           >
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
@@ -40,6 +47,13 @@
                   :class="statusClass(statusOf(r).code)"
                 >
                   {{ statusOf(r).label }} · กดเพื่อชำระ
+                </span>
+                <span
+                  v-else-if="statusOf(r).code === 'pay_later'"
+                  class="mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold"
+                  :class="statusClass(statusOf(r).code)"
+                >
+                  {{ statusOf(r).label }} · ชำระทีหลังได้
                 </span>
                 <p
                   v-else
@@ -96,6 +110,7 @@ const statusOf = (r: WatershopReceipt) => {
 
 const statusClass = (code: BillStatusCode) => {
   if (code === "pending") return "bg-amber-100 text-amber-700";
+  if (code === "pay_later") return "bg-orange-100 text-orange-700";
   if (code === "paid") return "bg-sky-100 text-sky-700";
   if (code === "shipping") return "bg-violet-100 text-violet-700";
   if (code === "delivered") return "bg-emerald-100 text-emerald-700";

@@ -159,7 +159,9 @@ export function buildOrderFlexMessage(data: {
   buyerName?: string;
   houseNo?: string;
   lineItems?: LineOrderItem[];
+  payLater?: boolean;
 }) {
+  const payLater = data.payLater === true;
   const rows: FlexBox[] = [
     flexRow("เลขบิล", `#${data.id}`),
     ...itemRows(data.lineItems, { itemName: data.itemName, quantity: data.quantity }),
@@ -171,16 +173,20 @@ export function buildOrderFlexMessage(data: {
     itemName: data.itemName,
     quantity: data.quantity,
   });
-  const altText = `ออเดอร์ใหม่ #${data.id} ${itemsSummary} ${data.amount.toLocaleString("th-TH")} ฿`;
+  const altText = payLater
+    ? `สั่งด่วน #${data.id} ${itemsSummary} ${data.amount.toLocaleString("th-TH")} ฿`
+    : `ออเดอร์ใหม่ #${data.id} ${itemsSummary} ${data.amount.toLocaleString("th-TH")} ฿`;
 
   return {
     type: "flex" as const,
     altText,
     contents: bubble(
-      orderHeader("📦  ออเดอร์ใหม่", data.houseNo),
-      "#0f172a",
+      orderHeader(payLater ? "🛵  สั่งด่วน" : "📦  ออเดอร์ใหม่", data.houseNo),
+      payLater ? "#c2410c" : "#0f172a",
       rows,
-      statusBadge("◔  รอชำระเงิน", "#fffbeb", "#b45309"),
+      payLater
+        ? statusBadge("◔  รอจัดส่ง · จ่ายทีหลัง", "#fff7ed", "#c2410c")
+        : statusBadge("◔  รอชำระเงิน", "#fffbeb", "#b45309"),
     ),
   };
 }

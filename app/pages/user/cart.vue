@@ -45,7 +45,7 @@
             <div class="min-w-0 flex-1">
               <p class="truncate font-semibold">{{ item.name }}</p>
               <p class="text-xs text-slate-500">
-                1 แพ็ค = {{ formatInt(bottlesOf(item.id)) }} ขวด · 35 ฿ · 3 แพ็ค 100 ฿
+                1 แพ็ค = {{ formatInt(bottlesOf(item.id)) }} ขวด · คละขนาดรวมกัน 3 แพ็ค 100 ฿
               </p>
             </div>
             <div class="flex shrink-0 items-center gap-2">
@@ -81,20 +81,34 @@
           <span class="text-2xl font-bold">{{ formatInt(totalAmount) }} ฿</span>
         </div>
 
-        <button
-          class="w-full rounded-xl bg-black px-4 py-2.5 font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:bg-slate-300"
-          :disabled="cartItems.length === 0 || isCheckingOut"
-          @click="checkout"
-        >
-          {{ isCheckingOut ? "กำลังยืนยัน..." : "ยืนยันสั่งซื้อ" }}
-        </button>
+        <div class="space-y-2">
+          <button
+            class="w-full rounded-xl bg-black px-4 py-2.5 font-semibold text-white shadow-md disabled:cursor-not-allowed disabled:bg-slate-300"
+            :disabled="cartItems.length === 0 || isCheckingOut || isOrdering"
+            @click="checkout"
+          >
+            {{ isCheckingOut ? "กำลังยืนยัน..." : "ยืนยันสั่งซื้อ" }}
+          </button>
+          <button
+            class="w-full rounded-xl border-2 border-orange-500 bg-orange-50 px-4 py-2.5 font-semibold text-orange-800 transition hover:bg-orange-100 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+            :disabled="cartItems.length === 0 || isOrdering || isCheckingOut"
+            @click="orderNow"
+          >
+            {{ isOrdering ? "กำลังสั่ง..." : "สั่งด่วน (จ่ายทีหลัง)" }}
+          </button>
+        </div>
+        <p class="mt-2 text-center text-[11px] text-slate-500">
+          คละขนาดได้ — รวม 3 แพ็ค 100 ฿
+        </p>
+        <p class="mt-1 text-center text-[11px] text-slate-500">
+          สั่งด่วน = รอจัดส่งก่อน · ชำระเงินทีหลังได้ที่หน้าบิล
+        </p>
       </div>
 
     </div>
 </template>
 
 <script setup lang="ts">
-import { type WatershopReceipt } from "~/composables/useWatershopReceipts";
 import { WATER_CATALOG } from "~/composables/useLocalWatershop";
 
 definePageMeta({
@@ -103,31 +117,27 @@ definePageMeta({
 });
 
 const imageOf = (id: string) =>
-  WATER_CATALOG.find((d) => d.id === id)?.image ?? "/products/water-bottle.png";
+  WATER_CATALOG.find((d) => d.id === id)?.image ?? "/products/forest-600ml.png";
 const bottlesOf = (id: string) =>
   WATER_CATALOG.find((d) => d.id === id)?.bottlesPerPack ?? 6;
 
 const router = useRouter();
 const { formatInt } = useFormatNumber();
-const { user } = useAuth();
+const { error: toastError } = useToast();
 const shop = useLocalWatershop();
 const {
-  items,
   cartItems,
-  placeOrder,
   hydrateShop,
   ensureCatalog,
   updateQuantity,
   removeItem,
-  clearCart,
   totalAmount,
   totalCount,
   totalBottles,
 } = shop;
-const { addReceipt } = useWatershopReceipts();
-const { confirm } = useAlertDialog();
-const { success, error: toastError } = useToast();
+const { checkoutCart } = usePlaceOrder();
 const isCheckingOut = ref(false);
+const isOrdering = ref(false);
 
 if (import.meta.client) {
   hydrateShop();
@@ -144,70 +154,10 @@ const onQtyChange = (id: string, event: Event) => {
 };
 
 const checkout = async () => {
-  const confirmed = await confirm({
-    title: "ยืนยันการสั่งซื้อ",
-    description: `ออเดอร์ ${formatInt(totalCount.value)} รายการ · ${formatInt(totalAmount.value)} ฿`,
-    confirmText: "ยืนยัน",
-    cancelText: "ยกเลิก",
-  });
-  if (!confirmed) return;
-
+  if (cartItems.value.length === 0 || isCheckingOut.value) return;
   isCheckingOut.value = true;
-
   try {
-    ensureCatalog();
-    for (const cartItem of cartItems.value) {
-      const stockItem = items.value.find((item) => item.id === cartItem.id);
-      if (!stockItem) throw new Error(`ไม่พบสินค้า ${cartItem.name}`);
-      if (stockItem.stock < cartItem.quantity) {
-        throw new Error(`สต็อก ${cartItem.name} ไม่พอ`);
-      }
-    }
-
-    const orderedItems = [...cartItems.value];
-    const finalTotalQty = totalBottles.value;
-    const finalTotalAmount = totalAmount.value;
-    const summaryName =
-      orderedItems.length === 1
-        ? orderedItems[0]!.name
-        : `ออเดอร์รวม ${formatInt(orderedItems.length)} รายการ`;
-
-    for (const cartItem of orderedItems) {
-      placeOrder(cartItem.id, cartItem.quantity);
-    }
-
-    const lineItems = orderedItems.map((item) => ({
-      name: item.name,
-      quantity: item.quantity,
-    }));
-
-    const newReceipt: WatershopReceipt = {
-      id: `${Date.now()}${Math.floor(Math.random() * 100)}`.slice(-6),
-      itemName: summaryName,
-      quantity: finalTotalQty,
-      amount: finalTotalAmount,
-      createdAt: new Date().toISOString(),
-      status: "pending",
-      lineItems,
-    };
-    addReceipt(newReceipt);
-
-    $fetch("/api/notify/order", {
-      method: "POST",
-      body: {
-        id: newReceipt.id,
-        itemName: newReceipt.itemName,
-        quantity: newReceipt.quantity,
-        amount: newReceipt.amount,
-        buyerName: user.value?.name,
-        houseNo: user.value?.houseNo,
-        lineItems,
-      },
-    }).catch(() => {});
-
-    clearCart();
-    success("สั่งซื้อสำเร็จ", "กรุณาชำระเงินและแนบสลิป");
-    await router.push(`/user/payment?id=${newReceipt.id}`);
+    await checkoutCart("pending");
   } catch (error) {
     toastError(
       "สั่งซื้อไม่สำเร็จ",
@@ -215,6 +165,21 @@ const checkout = async () => {
     );
   } finally {
     isCheckingOut.value = false;
+  }
+};
+
+const orderNow = async () => {
+  if (cartItems.value.length === 0 || isOrdering.value) return;
+  isOrdering.value = true;
+  try {
+    await checkoutCart("pay_later");
+  } catch (error) {
+    toastError(
+      "สั่งไม่สำเร็จ",
+      error instanceof Error ? error.message : "เกิดข้อผิดพลาด กรุณาลองอีกครั้ง",
+    );
+  } finally {
+    isOrdering.value = false;
   }
 };
 </script>

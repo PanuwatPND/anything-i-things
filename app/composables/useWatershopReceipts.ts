@@ -2,6 +2,7 @@ export const RECEIPTS_STORAGE_KEY = "watershop-receipts";
 
 export type BillStatusCode =
   | "pending"
+  | "pay_later"
   | "paid"
   | "shipping"
   | "delivered"
@@ -9,6 +10,7 @@ export type BillStatusCode =
 
 export const BILL_STATUS_LABEL: Record<BillStatusCode, string> = {
   pending: "รอชำระ",
+  pay_later: "รอจัดส่ง · จ่ายทีหลัง",
   paid: "ชำระแล้ว",
   shipping: "กำลังจัดส่ง",
   delivered: "จัดส่งสำเร็จ",

@@ -6,6 +6,7 @@ type Body = {
   buyerName?: string;
   houseNo?: string;
   lineItems?: LineOrderItem[];
+  payLater?: boolean;
 };
 
 const SEP = "─────────────────";
@@ -43,21 +44,30 @@ export default defineEventHandler(async (event) => {
     quantity: b.quantity,
   });
 
+  const payLater = b.payLater === true;
+  const statusLabel = payLater ? "◔ รอจัดส่ง · จ่ายทีหลัง" : "◔ รอชำระเงิน";
+
   const tgText = [
-    b.houseNo ? `📦 <b>ออเดอร์ใหม่ บ้าน ${b.houseNo}</b>` : `📦 <b>ออเดอร์ใหม่</b>`,
+    b.houseNo
+      ? payLater
+        ? `🛵 <b>สั่งด่วน บ้าน ${b.houseNo}</b>`
+        : `📦 <b>ออเดอร์ใหม่ บ้าน ${b.houseNo}</b>`
+      : payLater
+        ? `🛵 <b>สั่งด่วน</b>`
+        : `📦 <b>ออเดอร์ใหม่</b>`,
     SEP,
     row("เลขบิล", `#${b.id}`),
     ...itemsText.split("\n").map((line) => row("รายการ", line)),
     row("ยอด", `<b>${b.amount.toLocaleString("th-TH")} ฿</b>`),
     b.buyerName ? row("ลูกค้า", b.buyerName) : null,
-    row("สถานะ", "◔ รอชำระเงิน"),
+    row("สถานะ", statusLabel),
     SEP,
     `⏲ ${thaiTime()}`,
   ]
     .filter(Boolean)
     .join("\n");
 
-  const lineMessage = buildOrderFlexMessage(b);
+  const lineMessage = buildOrderFlexMessage({ ...b, payLater });
 
   const settings = await getNotifySettings(event).catch(() => ({
     telegram: true,

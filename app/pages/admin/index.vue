@@ -130,7 +130,7 @@
         <section
           class="rounded-3xl bg-white p-5 shadow-[0_8px_28px_-12px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.03]"
         >
-          <div class="grid grid-cols-4 gap-2">
+          <div class="grid grid-cols-2 gap-2 sm:grid-cols-5">
             <div
               class="rounded-2xl border border-slate-200 bg-slate-900 p-3 text-white"
             >
@@ -147,6 +147,12 @@
               <p class="text-[10px] font-medium uppercase tracking-wide text-blue-600">ชำระแล้ว</p>
               <p class="mt-1 text-xl font-bold tabular-nums text-blue-700">
                 {{ adminOrders.filter(o => o.status === 'paid').length }}
+              </p>
+            </div>
+            <div class="rounded-2xl border border-orange-100 bg-orange-50/80 p-3">
+              <p class="text-[10px] font-medium uppercase tracking-wide text-orange-600">จ่ายทีหลัง</p>
+              <p class="mt-1 text-xl font-bold tabular-nums text-orange-700">
+                {{ adminOrders.filter(o => o.status === 'pay_later').length }}
               </p>
             </div>
             <div class="rounded-2xl border border-violet-100 bg-violet-50/80 p-3">
@@ -247,7 +253,7 @@
                   {{ s.label }}
                 </button>
                 <button
-                  v-if="o.houseNo && (o.status === 'paid' || o.status === 'shipping')"
+                  v-if="o.houseNo && (o.status === 'paid' || o.status === 'pay_later' || o.status === 'shipping')"
                   type="button"
                   class="rounded-full bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white transition active:scale-95"
                   @click="goPinHouse(o.houseNo)"
@@ -833,11 +839,12 @@ const updateOrderStatus = async (orderId: string, status: BillStatusCode) => {
   }
 };
 
-type OrderFilterValue = "all" | "pending" | "paid" | "shipping" | "delivered";
+type OrderFilterValue = "all" | "pending" | "pay_later" | "paid" | "shipping" | "delivered";
 const orderFilter = ref<OrderFilterValue>("all");
 const orderFilterOptions: { value: OrderFilterValue; label: string }[] = [
   { value: "all", label: "ทั้งหมด" },
   { value: "pending", label: "รอชำระ" },
+  { value: "pay_later", label: "จ่ายทีหลัง" },
   { value: "paid", label: "ชำระแล้ว" },
   { value: "shipping", label: "กำลังส่ง" },
   { value: "delivered", label: "ส่งแล้ว" },
@@ -851,13 +858,17 @@ const filteredAdminOrders = computed(() =>
 
 const deliveryMapOrders = computed(() =>
   adminOrders.value
-    .filter((o) => o.houseNo && (o.status === "paid" || o.status === "shipping"))
+    .filter(
+      (o) =>
+        o.houseNo &&
+        (o.status === "paid" || o.status === "pay_later" || o.status === "shipping"),
+    )
     .map((o) => ({
       id: o.id,
       houseNo: o.houseNo,
       itemName: o.itemName,
       quantity: o.quantity,
-      status: o.status as "paid" | "shipping",
+      status: o.status as "paid" | "pay_later" | "shipping",
     })),
 );
 
@@ -869,6 +880,7 @@ const goPinHouse = (houseNo: string) => {
 const orderStatusClass = (status: BillStatusCode) => {
   const map: Record<BillStatusCode, string> = {
     pending: "bg-amber-100 text-amber-800 ring-1 ring-amber-200",
+    pay_later: "bg-orange-100 text-orange-800 ring-1 ring-orange-200",
     paid: "bg-blue-100 text-blue-800 ring-1 ring-blue-200",
     shipping: "bg-violet-100 text-violet-800 ring-1 ring-violet-200",
     delivered: "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200",
@@ -881,6 +893,7 @@ type StatusOption = { value: BillStatusCode; label: string; class: string };
 const nextStatusOptions = (current: BillStatusCode): StatusOption[] => {
   const all: StatusOption[] = [
     { value: "pending", label: "⏳ รอชำระ", class: "bg-amber-50 text-amber-700 ring-1 ring-amber-200 hover:bg-amber-100" },
+    { value: "pay_later", label: "🛵 จ่ายทีหลัง", class: "bg-orange-50 text-orange-700 ring-1 ring-orange-200 hover:bg-orange-100" },
     { value: "paid", label: "✓ ยืนยันชำระ", class: "bg-blue-50 text-blue-700 ring-1 ring-blue-200 hover:bg-blue-100" },
     { value: "shipping", label: "🛵 กำลังจัดส่ง", class: "bg-violet-50 text-violet-700 ring-1 ring-violet-200 hover:bg-violet-100" },
     { value: "delivered", label: "✓ ส่งแล้ว", class: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100" },
