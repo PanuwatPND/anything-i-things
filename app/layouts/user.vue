@@ -29,7 +29,7 @@
 <script setup lang="ts">
 const route = useRoute();
 const showHeader = computed(() => route.path !== "/user");
-const showTabBar = computed(() => !route.path.startsWith("/user/payment"));
+const showTabBar = computed(() => true);
 </script>
 
 <style scoped>

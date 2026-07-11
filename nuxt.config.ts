@@ -41,9 +41,8 @@ export default defineNuxtConfig({
         { rel: 'manifest', href: '/manifest.webmanifest' },
       ],
     },
-    // อย่าใช้ mode: 'out-in' — ช่วงเปลี่ยนหน้าจะว่าง (จอขาว) ระหว่าง leave กับ enter
-    pageTransition: { name: 'page' },
-    layoutTransition: { name: 'page' },
+    pageTransition: { name: 'page', mode: 'out-in' },
+    layoutTransition: { name: 'layout' },
   },
   postcss: {
     plugins: {

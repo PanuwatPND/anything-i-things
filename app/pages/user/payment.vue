@@ -11,18 +11,21 @@
       <div
         class="rounded-3xl bg-white p-5 shadow-[0_8px_28px_-12px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.03]"
       >
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <p class="text-xs text-slate-500">Payment</p>
-            <h1 class="mt-1 text-2xl font-bold tracking-tight">ชำระเงิน</h1>
-          </div>
+        <div class="flex items-center gap-3">
           <button
             type="button"
-            class="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
-            @click="router.push('/user/bills')"
+            class="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-slate-200 bg-slate-50 text-slate-700 transition hover:bg-slate-100 active:scale-95"
+            aria-label="กลับ"
+            @click="goBack"
           >
-            ดูบิลทั้งหมด
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
           </button>
+          <div class="min-w-0 flex-1">
+            <p class="text-xs text-slate-500">Payment</p>
+            <h1 class="mt-0.5 text-2xl font-bold tracking-tight">ชำระเงิน</h1>
+          </div>
         </div>
       </div>
 
@@ -246,6 +249,14 @@ const receipt = computed(() => {
   if (!id) return null;
   return receipts.value.find((r) => r.id === id) ?? null;
 });
+
+const goBack = () => {
+  if (import.meta.client && window.history.length > 1) {
+    router.back();
+    return;
+  }
+  router.push("/user/bills");
+};
 
 const copyPromptPay = async () => {
   if (!import.meta.client) return;

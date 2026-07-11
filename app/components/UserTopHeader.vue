@@ -118,9 +118,9 @@ const displayName = computed(() => {
 const avatarSrc = computed(() => user.value?.avatar?.trim() || DEFAULT_AVATAR);
 const headerShellClass = computed(() => {
   if (props.floating || hasScrolled.value) {
-    return " border border-black/10  rounded-b-2xl bg-white/85 opacity-100 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] backdrop-blur translate-y-0 scale-100";
+    return " border border-black/10 rounded-b-2xl bg-white/90 opacity-100 shadow-[0_10px_30px_-18px_rgba(15,23,42,0.45)] backdrop-blur translate-y-0";
   }
-  return " border border-transparent bg-transparent opacity-90 shadow-none backdrop-blur-0 -translate-y-1 scale-[0.985]";
+  return " border border-transparent bg-transparent opacity-95 shadow-none backdrop-blur-0 translate-y-0";
 });
 
 const goProfile = () => {

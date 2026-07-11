@@ -16,10 +16,10 @@ onMounted(() => {
 
   window.setTimeout(() => {
     isComplete.value = true;
-  }, 1200);
+  }, 900);
 
   window.setTimeout(() => {
     router.replace(to);
-  }, 2250);
+  }, 1650);
 });
 </script>

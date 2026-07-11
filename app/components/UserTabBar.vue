@@ -100,7 +100,7 @@ const setNavDir = (targetIndex: number) => {
 const activeTab = computed<TabId>(() => {
   const p = norm(route.path)
   if (p.startsWith('/user/water'))   return 'home'
-  if (p.startsWith('/user/bills'))   return 'bills'
+  if (p.startsWith('/user/bills') || p.startsWith('/user/payment')) return 'bills'
   if (p.startsWith('/user/cart'))    return 'cart'
   if (p.startsWith('/user/profile')) return 'profile'
   return 'home'

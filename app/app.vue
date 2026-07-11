@@ -5,7 +5,7 @@
         <Transition name="route-blur">
           <div
             v-if="routeNavBlur"
-            class="pointer-events-auto fixed inset-0 z-[100] bg-white/25 backdrop-blur-md"
+            class="pointer-events-auto fixed inset-0 z-[100] bg-slate-100/40 backdrop-blur-[2px]"
             aria-hidden="true"
           />
         </Transition>
@@ -28,7 +28,7 @@ const routeNavBlur = useState('route-nav-blur', () => false)
 <style>
 .route-blur-enter-active,
 .route-blur-leave-active {
-  transition: opacity 0.22s ease;
+  transition: opacity 0.18s ease;
 }
 
 .route-blur-enter-from,

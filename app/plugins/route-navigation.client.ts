@@ -19,7 +19,7 @@ const isRouteBlurDisabled = () =>
 export default defineNuxtPlugin(() => {
   const loading = useState(ROUTE_NAV_BLUR_KEY, () => false)
   const router = useRouter()
-  const MIN_OVERLAY_MS = 160
+  const MIN_OVERLAY_MS = 90
   let activeNavigation = 0
   const overlayStartedAt = new Map<number, number>()
   let safetyTimer: ReturnType<typeof setTimeout> | undefined
