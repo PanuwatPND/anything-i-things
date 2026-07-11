@@ -17,6 +17,7 @@
     <ClientOnly>
       <AppAlertDialog />
       <AppToast />
+      <PwaInstallPrompt />
     </ClientOnly>
   </div>
 </template>

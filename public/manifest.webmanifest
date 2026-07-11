@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Anything I Things",
-  "short_name": "Anything",
-  "description": "สั่งน้ำและบริการต่างๆ",
+  "name": "LunarWater",
+  "short_name": "LunarWater",
+  "description": "สั่งน้ำดื่มหมู่บ้าน — ง่าย รวดเร็ว",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -28,7 +28,7 @@
       "name": "สั่งน้ำ",
       "short_name": "สั่งน้ำ",
       "description": "เปิดหน้าสั่งซื้อน้ำดื่ม",
-      "url": "/user/shop",
+      "url": "/user/water",
       "icons": [{ "src": "/shortcut-shop.png", "sizes": "192x192" }]
     },
     {
