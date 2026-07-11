@@ -1,5 +1,4 @@
 const ROUTE_NAV_BLUR_KEY = 'route-nav-blur'
-const ROUTE_BLUR_DISABLED_KEY = 'watershop-disable-route-blur'
 
 const TAB_PATHS = new Set([
   '/user/water',
@@ -12,9 +11,6 @@ const normPath = (path: string) => path.replace(/\/$/, '') || '/'
 
 const isTabSwitch = (from: string, to: string) =>
   TAB_PATHS.has(normPath(from)) && TAB_PATHS.has(normPath(to))
-
-const isRouteBlurDisabled = () =>
-  typeof localStorage !== 'undefined' && localStorage.getItem(ROUTE_BLUR_DISABLED_KEY) === '1'
 
 export default defineNuxtPlugin(() => {
   const loading = useState(ROUTE_NAV_BLUR_KEY, () => false)
@@ -50,7 +46,7 @@ export default defineNuxtPlugin(() => {
   router.beforeEach((to, from) => {
     if (to.fullPath === from.fullPath) return
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-    if (isRouteBlurDisabled() || isTabSwitch(from.path, to.path)) return
+    if (isTabSwitch(from.path, to.path)) return
     activeNavigation += 1
     overlayStartedAt.set(activeNavigation, performance.now())
     loading.value = true
@@ -68,7 +64,7 @@ export default defineNuxtPlugin(() => {
       return
     }
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
-    if (isRouteBlurDisabled() || isTabSwitch(from.path, to.path)) {
+    if (isTabSwitch(from.path, to.path)) {
       loading.value = false
       clearSafety()
       return
