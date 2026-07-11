@@ -94,6 +94,22 @@
         <div>
           <p class="text-[11px] text-slate-400">โปร 3 แพ็ค 100 ฿ (คละขนาดรวมกันได้)</p>
         </div>
+
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <button
+            v-for="quick in quickMenus"
+            :key="quick.id"
+            type="button"
+            class="rounded-2xl border px-3 py-3 text-left shadow-sm transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            :class="quick.buttonClass"
+            :disabled="!canQuickAdd(quick.id)"
+            @click="(event) => onQuickAdd(quick.id, event)"
+          >
+            <p class="text-sm font-bold leading-tight">{{ quick.label }}</p>
+            <p class="mt-1 text-[11px] font-semibold opacity-80">100 ฿ · เพิ่มตะกร้า</p>
+          </button>
+        </div>
+
         <div class="mt-4 space-y-3">
           <div
             v-for="item in catalogItems"
@@ -182,37 +198,6 @@
             </div>
           </div>
         </div>
-        <div
-          v-if="cartCount > 0"
-          class="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-3"
-        >
-          <div class="flex items-center justify-between gap-2">
-            <p class="text-xs font-semibold text-slate-700">ในตะกร้า</p>
-            <button
-              type="button"
-              class="text-xs font-semibold text-slate-600 underline decoration-slate-300 underline-offset-2 transition hover:text-slate-900"
-              @click="goCart"
-            >
-              เปิดตะกร้า
-            </button>
-          </div>
-          <p class="mt-1 text-xs text-slate-500">
-            {{ formatInt(cartCount) }} รายการ ·
-            {{ formatInt(cartTotalAmount) }} ฿
-          </p>
-          <ul class="mt-2 space-y-1.5 text-sm text-slate-800">
-            <li
-              v-for="line in cartItems"
-              :key="line.id"
-              class="flex justify-between gap-2"
-            >
-              <span class="min-w-0 truncate">{{ line.name }}</span>
-              <span class="shrink-0 text-slate-500"
-                >×{{ formatInt(line.quantity) }}</span
-              >
-            </li>
-          </ul>
-        </div>
       </div>
 
     </div>
@@ -226,15 +211,11 @@ definePageMeta({
   middleware: "auth",
 });
 
-const router = useRouter();
 const { formatInt } = useFormatNumber();
 
 const shop = useLocalWatershop();
 const {
   items,
-  cartItems,
-  totalCount: cartCount,
-  totalAmount: cartTotalFromShop,
   hydrateShop,
   ensureCatalog,
   addItem,
@@ -242,7 +223,23 @@ const {
 const { receipts, loadReceipts } = useWatershopReceipts();
 const orderQuantities = ref<Record<string, number>>({});
 
-/** แสดง 2 รายการเสมอ — ดึงสต็อกจาก state ถ้ามี */
+const QUICK_PACK_QTY = 3;
+
+const quickMenus = [
+  {
+    id: "water-600ml",
+    label: "กลาง 3 แพ็ค",
+    buttonClass:
+      "border-sky-200 bg-sky-50 text-sky-900 hover:border-sky-300 hover:bg-sky-100",
+  },
+  {
+    id: "water-1500ml",
+    label: "ใหญ่ 3 แพ็ค",
+    buttonClass:
+      "border-violet-200 bg-violet-50 text-violet-900 hover:border-violet-300 hover:bg-violet-100",
+  },
+] as const;
+
 const catalogItems = computed(() =>
   WATER_CATALOG.map((def) => {
     const live = items.value.find((i) => i.id === def.id);
@@ -272,7 +269,6 @@ const todayTotalAmount = computed(() =>
 const todayOrderCount = computed(
   () => receipts.value.filter((r) => isToday(r.createdAt)).length,
 );
-const cartTotalAmount = computed(() => cartTotalFromShop.value);
 
 const receiptProgress = computed(() =>
   Math.min((todayReceiptCount.value / 20) * 100, 100),
@@ -345,10 +341,6 @@ const isToday = (timestamp: string) => {
     target.getMonth() === now.getMonth() &&
     target.getFullYear() === now.getFullYear()
   );
-};
-
-const goCart = () => {
-  router.push("/user/cart");
 };
 
 watchEffect(() => {
@@ -449,6 +441,24 @@ const flyToCart = (sourceEl: HTMLElement, imageSrc: string) => {
 };
 
 const onOrder = (itemId: string, event?: MouseEvent) => {
+  const requested = orderQuantities.value[itemId] ?? 1;
+  addToCart(itemId, requested, event?.currentTarget as HTMLElement | undefined);
+};
+
+const canQuickAdd = (itemId: string) => {
+  const item = catalogItems.value.find((i) => i.id === itemId);
+  return Boolean(item && item.stock >= QUICK_PACK_QTY);
+};
+
+const onQuickAdd = (itemId: string, event?: MouseEvent) => {
+  addToCart(itemId, QUICK_PACK_QTY, event?.currentTarget as HTMLElement | undefined);
+};
+
+const addToCart = (
+  itemId: string,
+  quantity: number,
+  trigger?: HTMLElement,
+) => {
   try {
     ensureCatalog();
     const targetItem =
@@ -457,23 +467,20 @@ const onOrder = (itemId: string, event?: MouseEvent) => {
     if (!targetItem) throw new Error("ไม่พบสินค้าที่เลือก");
     if (targetItem.stock <= 0) throw new Error("สินค้าหมด");
 
-    const requested = orderQuantities.value[itemId] ?? 1;
-    const quantity = Math.min(Math.max(1, requested), targetItem.stock);
+    const safeQty = Math.min(Math.max(1, Math.trunc(quantity)), targetItem.stock);
     addItem(
       {
         id: targetItem.id,
         name: targetItem.name,
         price: targetItem.price,
       },
-      quantity,
+      safeQty,
     );
 
-    const trigger = event?.currentTarget as HTMLElement | undefined;
     if (trigger) {
       flyToCart(trigger, targetItem.image);
     }
   } catch (error) {
-    // Keep flow silent; out-of-stock state is already shown on each item card.
     console.error(error);
   }
 };
