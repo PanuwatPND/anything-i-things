@@ -37,28 +37,49 @@
     </div>
 
     <form
-      class="rounded-3xl bg-white p-4 shadow-[0_16px_30px_rgba(0,0,0,0.12)]"
+      class="rounded-3xl bg-white p-5 shadow-[0_8px_28px_-12px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.03]"
       @submit.prevent="saveProfile"
     >
-      <p class="text-sm font-semibold text-slate-900">ข้อมูลบ้าน</p>
-      <p class="mt-1 text-xs text-slate-500">
-        ใช้ตอนสั่งน้ำและแจ้งเตือนการจัดส่ง
-      </p>
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="text-sm font-semibold text-slate-900">แก้ไขโปรไฟล์</p>
+          <p class="mt-0.5 text-xs text-slate-500">
+            ใช้ตอนสั่งน้ำและแจ้งเตือนการจัดส่ง
+          </p>
+        </div>
+        <span
+          v-if="isDirty"
+          class="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold text-amber-700 ring-1 ring-amber-200/80"
+        >
+          มีการแก้ไข
+        </span>
+      </div>
 
-      <div class="mt-4">
-        <label class="text-xs font-medium text-slate-600">รูปโปรไฟล์</label>
+      <div class="mt-5">
+        <p class="text-xs font-medium text-slate-600">รูปโปรไฟล์</p>
         <div class="mt-2 flex items-center gap-3">
           <img
             :src="avatarPreview"
             alt="avatar preview"
-            class="h-12 w-12 rounded-full border border-black/10 bg-slate-100 object-cover"
+            class="h-14 w-14 rounded-full bg-slate-100 object-cover ring-1 ring-slate-200"
           />
-          <input
-            type="file"
-            accept="image/*"
-            class="block w-full text-xs text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-black file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:bg-slate-800"
-            @change="onAvatarSelect"
-          />
+          <div class="min-w-0 flex-1">
+            <label
+              class="inline-flex cursor-pointer items-center justify-center rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 active:scale-[0.98]"
+            >
+              เปลี่ยนรูป
+              <input
+                ref="avatarInputRef"
+                type="file"
+                accept="image/*"
+                class="sr-only"
+                @change="onAvatarSelect"
+              />
+            </label>
+            <p class="mt-1.5 truncate text-[11px] text-slate-400">
+              {{ avatarFileLabel }}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -68,7 +89,7 @@
           <input
             v-model="form.name"
             type="text"
-            class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-black focus:outline-none"
+            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none transition focus:border-slate-400 focus:bg-white"
             placeholder="เช่น คุณสมชาย"
           />
         </label>
@@ -79,19 +100,30 @@
             v-model="form.houseNo"
             type="text"
             inputmode="numeric"
-            class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-black focus:outline-none"
+            class="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none transition focus:border-slate-400 focus:bg-white"
             placeholder="เช่น 30"
           />
         </label>
       </div>
 
-      <p v-if="notice" class="mt-3 text-xs text-emerald-600">{{ notice }}</p>
-
       <button
         type="submit"
-        class="mt-4 w-full rounded-xl bg-black px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 active:scale-[0.99]"
+        :disabled="!canSave"
+        class="mt-5 w-full rounded-2xl px-4 py-3 text-sm font-semibold transition active:scale-[0.99] disabled:cursor-not-allowed disabled:active:scale-100"
+        :class="
+          canSave
+            ? 'bg-slate-900 text-white shadow-md hover:bg-slate-800'
+            : 'bg-slate-100 text-slate-400'
+        "
       >
-        บันทึกข้อมูล
+        <span v-if="justSaved" class="inline-flex items-center justify-center gap-1.5">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          บันทึกแล้ว
+        </span>
+        <span v-else-if="!isDirty">ไม่มีการเปลี่ยนแปลง</span>
+        <span v-else>บันทึกการแก้ไข</span>
       </button>
     </form>
 
@@ -199,17 +231,47 @@ const { formatInt } = useFormatNumber();
 const { user, logout, updateProfile } = useAuth();
 const { receipts, loadReceipts } = useWatershopReceipts();
 const { canInstall, isIos, isStandalone, install } = usePwaInstall();
+const { success: toastSuccess, error: toastError } = useToast();
 
 const totalSpend = computed(() =>
   receipts.value.reduce((sum, receipt) => sum + receipt.amount, 0),
 );
-const notice = ref("");
 const chatNotice = ref("");
 const installNotice = ref("");
+const justSaved = ref(false);
+const avatarFileName = ref("");
+const avatarInputRef = ref<HTMLInputElement | null>(null);
+let savedTimer: ReturnType<typeof setTimeout> | null = null;
+
 const form = reactive({
   name: "",
   houseNo: "",
   avatar: "",
+});
+
+const savedSnapshot = computed(() => ({
+  name: (user.value?.name ?? "").trim(),
+  houseNo: (user.value?.houseNo ?? "").trim(),
+  avatar: user.value?.avatar ?? "",
+}));
+
+const isDirty = computed(() => {
+  const saved = savedSnapshot.value;
+  return (
+    form.name.trim() !== saved.name ||
+    form.houseNo.trim() !== saved.houseNo ||
+    form.avatar !== saved.avatar
+  );
+});
+
+const canSave = computed(() => isDirty.value && !justSaved.value);
+
+const avatarFileLabel = computed(() => {
+  if (avatarFileName.value) return avatarFileName.value;
+  if (form.avatar && form.avatar !== savedSnapshot.value.avatar)
+    return "เลือกรูปใหม่แล้ว — กดบันทึกเพื่อใช้";
+  if (form.avatar) return "ใช้รูปปัจจุบันอยู่";
+  return "ยังไม่มีรูป — กดเปลี่ยนรูปเพื่ออัปโหลด";
 });
 
 const avatarPreview = computed(() => form.avatar || DEFAULT_AVATAR);
@@ -224,6 +286,10 @@ watchEffect(() => {
   form.name = user.value?.name ?? "";
   form.houseNo = user.value?.houseNo ?? "";
   form.avatar = user.value?.avatar ?? "";
+});
+
+watch(isDirty, (dirty) => {
+  if (dirty) justSaved.value = false;
 });
 
 const onInstallApp = async () => {
@@ -245,12 +311,23 @@ const onLogout = () => {
 };
 
 const saveProfile = () => {
+  if (!canSave.value) return;
+
   updateProfile({
     name: form.name.trim(),
     houseNo: form.houseNo.trim(),
     avatar: form.avatar,
   });
-  notice.value = "บันทึกข้อมูลเรียบร้อยแล้ว";
+
+  avatarFileName.value = "";
+  if (avatarInputRef.value) avatarInputRef.value.value = "";
+  justSaved.value = true;
+  toastSuccess("บันทึกแล้ว", "อัปเดตโปรไฟล์เรียบร้อย");
+
+  if (savedTimer) clearTimeout(savedTimer);
+  savedTimer = setTimeout(() => {
+    justSaved.value = false;
+  }, 1800);
 };
 
 const onAvatarSelect = async (event: Event) => {
@@ -269,8 +346,14 @@ const onAvatarSelect = async (event: Event) => {
 
   try {
     form.avatar = await toBase64(file);
+    avatarFileName.value = file.name;
+    justSaved.value = false;
   } catch {
-    notice.value = "อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่อีกครั้ง";
+    toastError("อัปโหลดรูปไม่สำเร็จ", "กรุณาลองใหม่อีกครั้ง");
   }
 };
+
+onUnmounted(() => {
+  if (savedTimer) clearTimeout(savedTimer);
+});
 </script>

@@ -190,25 +190,17 @@
           <p class="mt-1 text-rose-700">{{ verifyError }}</p>
         </div>
 
-        <!-- verify / confirm button -->
-        <button
-          type="button"
-          :disabled="!receipt.slipDataUrl || verifying"
-          class="w-full rounded-2xl py-4 text-sm font-bold shadow-[0_8px_24px_-8px_rgba(15,23,42,0.5)] transition active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
-          :class="
-            receipt.slipDataUrl && !verifying ? 'bg-black text-white' : ''
-          "
-          @click="verifyAndConfirm"
-        >
-          <span v-if="verifying" class="flex items-center justify-center gap-2">
-            <span
-              class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"
-            />
-            กำลังตรวจสอบสลิป...
-          </span>
-          <span v-else-if="!receipt.slipDataUrl">กรุณาแนบสลิปก่อนยืนยัน</span>
-          <span v-else>ยืนยันการชำระเงิน</span>
-        </button>
+        <!-- slide to confirm -->
+        <SlideToConfirm
+          ref="slideRef"
+          :disabled="!receipt.slipDataUrl"
+          :loading="verifying"
+          label="เลื่อนเพื่อชำระเงิน"
+          disabled-label="กรุณาแนบสลิปก่อน"
+          loading-label="กำลังตรวจสอบสลิป..."
+          success-label="ชำระเงินสำเร็จ"
+          @confirm="verifyAndConfirm"
+        />
       </template>
 
       <DeliveryRoutePreview
@@ -248,6 +240,7 @@ const { receipts, loadReceipts, attachSlip, removeSlip, updateStatus, updateSlip
 const { runOcr } = useSlipOcr();
 
 const slipInputRef = ref<HTMLInputElement | null>(null);
+const slideRef = ref<{ reset: () => void } | null>(null);
 const copied = ref(false);
 const verifying = ref(false);
 const verifyError = ref("");
@@ -411,6 +404,7 @@ const verifyAndConfirm = async () => {
   } catch (err) {
     verifyError.value =
       err instanceof Error ? err.message : "ตรวจสลิปไม่สำเร็จ";
+    slideRef.value?.reset();
   } finally {
     verifying.value = false;
   }
