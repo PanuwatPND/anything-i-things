@@ -105,7 +105,7 @@
                   "
                 />
                 <div
-                  class="grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm ring-2 ring-white"
+                  class="grid h-8 w-8 shrink-0 place-items-center rounded-full ring-2 ring-white"
                   :class="
                     step.done
                       ? 'bg-emerald-500 text-white'
@@ -114,8 +114,73 @@
                         : 'bg-slate-200 text-slate-400'
                   "
                 >
-                  <span v-if="step.done">✓</span>
-                  <span v-else>{{ step.icon }}</span>
+                  <svg
+                    v-if="step.done"
+                    class="h-3.5 w-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <!-- package -->
+                  <svg
+                    v-else-if="step.key === 'order'"
+                    class="h-3.5 w-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m7.5 4.27 9 5.15" />
+                    <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+                    <path d="m3.3 7 8.7 5 8.7-5" />
+                    <path d="M12 22V12" />
+                  </svg>
+                  <!-- clipboard / prep -->
+                  <svg
+                    v-else-if="step.key === 'prep'"
+                    class="h-3.5 w-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                    <path d="M12 11h4" />
+                    <path d="M12 16h4" />
+                    <path d="M8 11h.01" />
+                    <path d="M8 16h.01" />
+                  </svg>
+                  <!-- truck -->
+                  <svg
+                    v-else
+                    class="h-3.5 w-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" />
+                    <path d="M15 18H9" />
+                    <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14" />
+                    <circle cx="17" cy="18" r="2" />
+                    <circle cx="7" cy="18" r="2" />
+                  </svg>
                 </div>
                 <div
                   class="h-0.5 flex-1"
@@ -351,30 +416,9 @@ const stageLabel = computed(() =>
 const steps = computed(() => {
   const shipping = props.stage === "shipping";
   return [
-    {
-      key: "order",
-      label: "รับออเดอร์",
-      icon: "📦",
-      done: true,
-      current: false,
-      filled: true,
-    },
-    {
-      key: "prep",
-      label: "เตรียมของ",
-      icon: "🧺",
-      done: shipping,
-      current: !shipping,
-      filled: true,
-    },
-    {
-      key: "ship",
-      label: "กำลังส่ง",
-      icon: "🏡",
-      done: false,
-      current: shipping,
-      filled: shipping,
-    },
+    { key: "order", label: "รับออเดอร์", done: true, current: false, filled: true },
+    { key: "prep", label: "เตรียมของ", done: shipping, current: !shipping, filled: true },
+    { key: "ship", label: "กำลังส่ง", done: false, current: shipping, filled: shipping },
   ];
 });
 

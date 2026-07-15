@@ -160,11 +160,16 @@ const vehicleIcon = (L: typeof import("leaflet")) =>
   L.divIcon({
     className: "village-marker village-vehicle",
     html: `<div class="village-vehicle__wrap" aria-hidden="true">
-      <div class="village-vehicle__body" style="background-image:url('/delivery-cat-icon.png')"></div>
+      <img class="village-vehicle__img" src="/delivery-cat-icon.png" alt="" draggable="false" />
     </div>`,
-    iconSize: [52, 52],
-    iconAnchor: [26, 26],
+    iconSize: [48, 48],
+    iconAnchor: [24, 24],
   });
+
+/** Lucide-style SVGs — สะอาด อ่านง่าย ไม่ใช้ emoji */
+const ICON_STORE = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M10 22V12h4v10"/><path d="M15 7H9v5h6z"/></svg>`;
+const ICON_HOME = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
+const ICON_PIN = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg>`;
 
 const pinIcon = (
   L: typeof import("leaflet"),
@@ -172,17 +177,16 @@ const pinIcon = (
   confirmed: boolean,
   shape: "pin" | "shop" | "home" = "pin",
 ) => {
-  const dim = confirmed ? "1" : "0.7";
+  const dim = confirmed ? "1" : "0.72";
 
-  if (shape === "shop") {
+  if (shape === "shop" || shape === "home") {
+    const icon = shape === "shop" ? ICON_STORE : ICON_HOME;
     return L.divIcon({
       className: "village-marker",
       html: `<div class="village-marker__wrap" style="opacity:${dim}">
-        <span class="village-marker__pulse" style="background:${color}"></span>
-        <div class="village-marker__badge" style="background:${color}">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 9l1-4h16l1 4"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/>
-          </svg>
+        <span class="village-marker__ring" style="--marker-color:${color}"></span>
+        <div class="village-marker__chip" style="color:${color}">
+          ${icon}
         </div>
       </div>`,
       iconSize: [40, 40],
@@ -190,27 +194,12 @@ const pinIcon = (
     });
   }
 
-  if (shape === "home") {
-    return L.divIcon({
-      className: "village-marker",
-      html: `<div class="village-marker__wrap" style="opacity:${dim}">
-        <span class="village-marker__pulse village-marker__pulse--home" style="background:${color}"></span>
-        <div class="village-marker__pin" style="background:${color}">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(45deg)">
-            <path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>
-          </svg>
-        </div>
-      </div>`,
-      iconSize: [36, 44],
-      iconAnchor: [18, 40],
-    });
-  }
-
   return L.divIcon({
     className: "village-marker",
     html: `<div class="village-marker__wrap" style="opacity:${dim}">
-      <span class="village-marker__pulse" style="background:${color}"></span>
-      <div class="village-marker__pin" style="background:${color}"></div>
+      <div class="village-marker__teardrop" style="background:${color}">
+        ${ICON_PIN}
+      </div>
     </div>`,
     iconSize: [28, 36],
     iconAnchor: [14, 34],
@@ -573,32 +562,32 @@ onUnmounted(() => {
   height: 100%;
 }
 
-.village-marker__pulse {
+.village-marker__ring {
   position: absolute;
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
-  opacity: 0.35;
-  animation: village-pulse 2s ease-out infinite;
+  background: color-mix(in srgb, var(--marker-color, #0f172a) 18%, transparent);
+  animation: village-pulse 2.2s ease-out infinite;
 }
 
-.village-marker__pulse--home {
-  bottom: 6px;
-}
-
-.village-marker__badge {
+.village-marker__chip {
   position: relative;
   z-index: 1;
   display: grid;
   place-items: center;
   width: 34px;
   height: 34px;
-  border-radius: 12px;
-  border: 3px solid #fff;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.35);
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
 }
 
-.village-marker__pin {
+.village-marker__chip svg {
+  display: block;
+}
+
+.village-marker__teardrop {
   position: relative;
   z-index: 1;
   display: grid;
@@ -607,28 +596,33 @@ onUnmounted(() => {
   height: 26px;
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
-  border: 3px solid #fff;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.35);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.28);
+}
+
+.village-marker__teardrop svg {
+  transform: rotate(45deg);
+  display: block;
 }
 
 .village-vehicle__wrap {
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
+  width: 40px;
+  height: 40px;
   animation: village-vehicle-bob 1.2s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(15, 23, 42, 0.28));
 }
 
-.village-vehicle__body {
-  width: 46px;
-  height: 46px;
-  overflow: hidden;
-  border-radius: 999px;
-  background-color: transparent;
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.28);
+.village-vehicle__img {
+  display: block;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+  background: transparent;
 }
 
 @keyframes village-vehicle-bob {
@@ -685,9 +679,9 @@ onUnmounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .village-marker__pulse {
+  .village-marker__ring {
     animation: none;
-    opacity: 0.25;
+    opacity: 0.35;
   }
   .village-route-flow {
     animation: none;
