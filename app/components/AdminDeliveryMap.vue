@@ -71,6 +71,8 @@
     >
       <ClientOnly>
         <VillageSatelliteMap
+          basemap="satellite"
+          :animate-route="false"
           :markers="allMarkers"
           :pin-mode="pinMode"
           :draft-pin="draftPin"

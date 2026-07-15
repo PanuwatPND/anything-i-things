@@ -1,12 +1,15 @@
 <template>
   <div
     class="village-map relative h-full w-full overflow-hidden"
-    :class="compact ? 'village-map--compact' : ''"
+    :class="[
+      compact ? 'village-map--compact' : '',
+      basemap === 'vector' ? 'village-map--vector' : 'village-map--satellite',
+    ]"
   >
     <div ref="mapEl" class="h-full w-full" />
     <div
       v-if="isLoading"
-      class="pointer-events-none absolute inset-0 z-[500] animate-pulse bg-slate-200"
+      class="pointer-events-none absolute inset-0 z-[500] animate-pulse bg-slate-100"
     >
       <div class="absolute inset-0 flex items-center justify-center">
         <span
@@ -24,8 +27,11 @@ import type {
   Marker as LeafletMarker,
   Polyline as LeafletPolyline,
   CircleMarker as LeafletCircleMarker,
+  TileLayer,
 } from "leaflet";
 import type { MapMarker } from "~/utils/villageMap";
+
+type LatLng = { lat: number; lng: number };
 
 const props = withDefaults(
   defineProps<{
@@ -35,30 +41,50 @@ const props = withDefaults(
     markers?: MapMarker[];
     pinMode?: boolean;
     draftPin?: { lat: number; lng: number } | null;
-    route?: { lat: number; lng: number }[];
-    /** โหมดพรีวิวจัดส่ง — ซ่อน zoom control, route glow */
+    route?: LatLng[];
+    /** โหมดพรีวิวจัดส่ง — ซ่อน zoom control */
     compact?: boolean;
+    /** แผนที่พื้นหลัง */
+    basemap?: "vector" | "satellite";
+    /** เส้นประวิ่งไหล + รถเลื่อนตามเส้น */
+    animateRoute?: boolean;
   }>(),
-  { zoom: 19, pinMode: false, draftPin: null, compact: false },
+  {
+    zoom: 19,
+    pinMode: false,
+    draftPin: null,
+    compact: false,
+    basemap: "vector",
+    animateRoute: true,
+  },
 );
 
 const emit = defineEmits<{
-  mapClick: [coords: { lat: number; lng: number }];
+  mapClick: [coords: LatLng];
 }>();
 
 const mapEl = ref<HTMLElement | null>(null);
 let mapInstance: LeafletMap | null = null;
+let baseTiles: TileLayer[] = [];
 let leafletMarkers: LeafletMarker[] = [];
 let draftMarker: LeafletMarker | null = null;
 let routeHalo: LeafletPolyline | null = null;
 let routeLine: LeafletPolyline | null = null;
 let routeGlowDots: LeafletCircleMarker[] = [];
-let mapClickHandler: ((e: { latlng: { lat: number; lng: number } }) => void) | null =
-  null;
+let vehicleMarker: LeafletMarker | null = null;
+let mapClickHandler: ((e: { latlng: LatLng }) => void) | null = null;
 let resizeObserver: ResizeObserver | null = null;
 let hasSized = false;
 let loadingFallbackTimer: ReturnType<typeof setTimeout> | null = null;
+let vehicleRaf = 0;
+let routeAnimPoints: LatLng[] = [];
+let routeCumDist: number[] = [];
+let routeTotalDist = 0;
 const isLoading = ref(true);
+
+const prefersReducedMotion = () =>
+  import.meta.client &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const escapeHtml = (s: string) =>
   s
@@ -66,6 +92,79 @@ const escapeHtml = (s: string) =>
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+
+const haversineM = (a: LatLng, b: LatLng) => {
+  const R = 6371000;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.lat * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+};
+
+const bearingDeg = (a: LatLng, b: LatLng) => {
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.lat * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x =
+    Math.cos(lat1) * Math.sin(lat2) -
+    Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+};
+
+const buildRouteMetrics = (points: LatLng[]) => {
+  const cum = [0];
+  let total = 0;
+  for (let i = 1; i < points.length; i++) {
+    total += haversineM(points[i - 1]!, points[i]!);
+    cum.push(total);
+  }
+  return { cum, total };
+};
+
+const sampleRoute = (
+  points: LatLng[],
+  cum: number[],
+  total: number,
+  t: number,
+): { pos: LatLng; bearing: number } => {
+  if (points.length === 0) return { pos: { lat: 0, lng: 0 }, bearing: 0 };
+  if (points.length === 1 || total <= 0) {
+    return { pos: points[0]!, bearing: 0 };
+  }
+  const dist = t * total;
+  let i = 1;
+  while (i < cum.length && cum[i]! < dist) i++;
+  const i1 = Math.max(1, i);
+  const i0 = i1 - 1;
+  const segStart = cum[i0]!;
+  const segEnd = cum[i1]!;
+  const segLen = Math.max(1e-6, segEnd - segStart);
+  const u = (dist - segStart) / segLen;
+  const a = points[i0]!;
+  const b = points[i1]!;
+  return {
+    pos: {
+      lat: a.lat + (b.lat - a.lat) * u,
+      lng: a.lng + (b.lng - a.lng) * u,
+    },
+    bearing: bearingDeg(a, b),
+  };
+};
+
+const vehicleIcon = (L: typeof import("leaflet")) =>
+  L.divIcon({
+    className: "village-marker village-vehicle",
+    html: `<div class="village-vehicle__wrap" aria-hidden="true">
+      <div class="village-vehicle__body" style="background-image:url('/delivery-cat-icon.png')"></div>
+    </div>`,
+    iconSize: [52, 52],
+    iconAnchor: [26, 26],
+  });
 
 const pinIcon = (
   L: typeof import("leaflet"),
@@ -118,13 +217,102 @@ const pinIcon = (
   });
 };
 
+const stopVehicleAnim = () => {
+  if (vehicleRaf) {
+    cancelAnimationFrame(vehicleRaf);
+    vehicleRaf = 0;
+  }
+  vehicleMarker?.remove();
+  vehicleMarker = null;
+  routeAnimPoints = [];
+  routeCumDist = [];
+  routeTotalDist = 0;
+};
+
 const clearRoute = () => {
+  stopVehicleAnim();
   routeHalo?.remove();
   routeLine?.remove();
   for (const d of routeGlowDots) d.remove();
   routeHalo = null;
   routeLine = null;
   routeGlowDots = [];
+};
+
+const startVehicleAnim = async (points: LatLng[]) => {
+  if (!mapInstance || points.length < 2) return;
+  if (!props.animateRoute || prefersReducedMotion()) return;
+
+  const L = await import("leaflet");
+  const { cum, total } = buildRouteMetrics(points);
+  if (total <= 0) return;
+
+  routeAnimPoints = points;
+  routeCumDist = cum;
+  routeTotalDist = total;
+
+  const first = sampleRoute(points, cum, total, 0);
+  vehicleMarker = L.marker([first.pos.lat, first.pos.lng], {
+    icon: vehicleIcon(L),
+    zIndexOffset: 800,
+    interactive: false,
+  }).addTo(mapInstance);
+
+  const durationMs = Math.min(14000, Math.max(8000, total * 40));
+  let startTs = 0;
+
+  const tick = (ts: number) => {
+    if (!vehicleMarker || !mapInstance) return;
+    if (!startTs) startTs = ts;
+    const t = ((ts - startTs) % durationMs) / durationMs;
+    const sample = sampleRoute(
+      routeAnimPoints,
+      routeCumDist,
+      routeTotalDist,
+      t,
+    );
+    vehicleMarker.setLatLng([sample.pos.lat, sample.pos.lng]);
+    vehicleRaf = requestAnimationFrame(tick);
+  };
+
+  vehicleRaf = requestAnimationFrame(tick);
+};
+
+const applyBasemap = async () => {
+  if (!mapInstance) return;
+  const L = await import("leaflet");
+  for (const t of baseTiles) t.remove();
+  baseTiles = [];
+
+  if (props.basemap === "satellite") {
+    const imagery = L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      { maxZoom: 20, attribution: "Tiles &copy; Esri" },
+    ).addTo(mapInstance);
+    const labels = L.tileLayer(
+      "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+      { maxZoom: 19, opacity: 0.75, attribution: "" },
+    ).addTo(mapInstance);
+    baseTiles = [imagery, labels];
+    imagery.on("load", () => {
+      isLoading.value = false;
+    });
+  } else {
+    // CartoDB Positron — เวกเตอร์สว่าง อ่านง่าย
+    const vector = L.tileLayer(
+      "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+      {
+        maxZoom: 20,
+        subdomains: "abcd",
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+      },
+    ).addTo(mapInstance);
+    baseTiles = [vector];
+    vector.on("load", () => {
+      isLoading.value = false;
+    });
+  }
 };
 
 const renderMarkers = async () => {
@@ -180,46 +368,50 @@ const renderMarkers = async () => {
 
   clearRoute();
   if (props.route?.length) {
-    const latlngs = props.route.map(
-      (p) => [p.lat, p.lng] as [number, number],
-    );
+    const latlngs = props.route.map((p) => [p.lat, p.lng] as [number, number]);
+    const onVector = props.basemap === "vector";
 
-    // เส้นขอบขาว → อ่านง่ายบนดาวเทียม
     routeHalo = L.polyline(latlngs, {
-      color: "#ffffff",
-      weight: 8,
-      opacity: 0.85,
+      color: onVector ? "#cbd5e1" : "#ffffff",
+      weight: onVector ? 7 : 8,
+      opacity: onVector ? 1 : 0.85,
       lineCap: "round",
       lineJoin: "round",
     }).addTo(mapInstance);
 
+    const shouldAnimate =
+      props.animateRoute && !prefersReducedMotion() && props.route.length >= 2;
+
     routeLine = L.polyline(latlngs, {
-      color: "#38bdf8",
+      color: onVector ? "#0ea5e9" : "#38bdf8",
       weight: 4,
       opacity: 1,
       lineCap: "round",
       lineJoin: "round",
-      className: "village-route-line",
+      dashArray: shouldAnimate ? "10 14" : undefined,
+      className: shouldAnimate ? "village-route-flow" : "village-route-line",
     }).addTo(mapInstance);
 
     const start = props.route[0]!;
     const end = props.route[props.route.length - 1]!;
     routeGlowDots = [
       L.circleMarker([start.lat, start.lng], {
-        radius: 5,
+        radius: 4,
         color: "#fff",
         weight: 2,
-        fillColor: "#10b981",
+        fillColor: "#059669",
         fillOpacity: 1,
       }).addTo(mapInstance),
       L.circleMarker([end.lat, end.lng], {
-        radius: 5,
+        radius: 4,
         color: "#fff",
         weight: 2,
-        fillColor: "#f43f5e",
+        fillColor: "#e11d48",
         fillOpacity: 1,
       }).addTo(mapInstance),
     ];
+
+    await startVehicleAnim(props.route);
   }
 
   const fitList = [
@@ -272,20 +464,8 @@ onMounted(async () => {
     mapInstance.zoomControl.setPosition("bottomright");
   }
 
-  // ดาวเทียม + ป้ายชื่อถนนบางๆ ทับด้านบนให้อ่านง่ายขึ้น
-  const imagery = L.tileLayer(
-    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    { maxZoom: 20, attribution: "Tiles &copy; Esri" },
-  ).addTo(mapInstance);
+  await applyBasemap();
 
-  L.tileLayer(
-    "https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
-    { maxZoom: 19, opacity: 0.75, attribution: "" },
-  ).addTo(mapInstance);
-
-  imagery.on("load", () => {
-    isLoading.value = false;
-  });
   loadingFallbackTimer = setTimeout(() => {
     isLoading.value = false;
   }, 4000);
@@ -313,6 +493,14 @@ watch(() => [props.lat, props.lng], renderMarkers);
 watch(() => props.draftPin, renderMarkers, { deep: true });
 watch(() => props.route, renderMarkers, { deep: true });
 watch(() => props.pinMode, syncPinMode);
+watch(
+  () => props.basemap,
+  async () => {
+    isLoading.value = true;
+    await applyBasemap();
+    await renderMarkers();
+  },
+);
 
 onUnmounted(() => {
   if (mapInstance && mapClickHandler) {
@@ -323,6 +511,8 @@ onUnmounted(() => {
   if (loadingFallbackTimer) clearTimeout(loadingFallbackTimer);
   loadingFallbackTimer = null;
   clearRoute();
+  for (const t of baseTiles) t.remove();
+  baseTiles = [];
   mapInstance?.remove();
   mapInstance = null;
   leafletMarkers = [];
@@ -333,7 +523,7 @@ onUnmounted(() => {
 
 <style>
 .village-map .leaflet-control-attribution {
-  background: rgba(255, 255, 255, 0.72) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
   backdrop-filter: blur(6px);
   border-radius: 8px 0 0 0;
   font-size: 9px !important;
@@ -421,6 +611,48 @@ onUnmounted(() => {
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.35);
 }
 
+.village-vehicle__wrap {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  animation: village-vehicle-bob 1.2s ease-in-out infinite;
+}
+
+.village-vehicle__body {
+  width: 46px;
+  height: 46px;
+  overflow: hidden;
+  border-radius: 999px;
+  background-color: transparent;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.28);
+}
+
+@keyframes village-vehicle-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+/* เส้นประวิ่งไหล */
+.village-route-flow {
+  stroke-dasharray: 10 14;
+  animation: village-dash-flow 0.9s linear infinite;
+}
+
+@keyframes village-dash-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
 .village-tooltip {
   background: rgba(15, 23, 42, 0.92) !important;
   border: none !important;
@@ -456,6 +688,12 @@ onUnmounted(() => {
   .village-marker__pulse {
     animation: none;
     opacity: 0.25;
+  }
+  .village-route-flow {
+    animation: none;
+  }
+  .village-vehicle__wrap {
+    animation: none;
   }
 }
 </style>
