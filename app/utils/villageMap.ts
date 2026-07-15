@@ -121,10 +121,55 @@ export function googleMapsLinkUrl(lat: number, lng: number, zoom = 19) {
   return `https://www.google.com/maps?q=${lat},${lng}&z=${zoom}&t=k`;
 }
 
+/** เปิดโหมดนำทางเลี้ยวทีละเลี้ยวจากตำแหน่งปัจจุบันไปยัง lat,lng */
+export function googleMapsNavigationUrl(lat: number, lng: number) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+}
+
 export type MapMarker = {
   lat: number;
   lng: number;
   label?: string;
   color?: string;
   confirmed?: boolean;
+  shape?: "pin" | "shop";
 };
+
+/**
+ * ขอเส้นทางจริงตามถนนจาก OSRM (public demo server, ฟรี ไม่ต้องขอ API key)
+ * คืนค่า null ถ้าขอไม่สำเร็จ — ให้ผู้เรียกใช้เส้นตรงเป็น fallback
+ */
+export async function fetchRoadRoute(
+  origin: { lat: number; lng: number },
+  destination: { lat: number; lng: number },
+): Promise<{ lat: number; lng: number }[] | null> {
+  try {
+    const url = `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson`;
+    const res = await $fetch<{
+      code: string;
+      routes?: { geometry: { coordinates: [number, number][] } }[];
+    }>(url);
+    const coords = res?.routes?.[0]?.geometry?.coordinates;
+    if (!coords?.length) return null;
+    return coords.map(([lng, lat]) => ({ lat, lng }));
+  } catch {
+    return null;
+  }
+}
+
+/** ระยะทางตรง (กม.) ระหว่างจุดสองจุด — ใช้ประมาณระยะส่ง ไม่ใช่ระยะถนนจริง */
+export function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
+  const R = 6371;
+  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
+  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
+  const lat1 = (a.lat * Math.PI) / 180;
+  const lat2 = (b.lat * Math.PI) / 180;
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+/** เวลาโดยประมาณ (นาที) สมมติความเร็วมอเตอร์ไซค์เฉลี่ยในหมู่บ้าน ~20 กม./ชม. */
+export function estimateDeliveryMinutes(km: number) {
+  return Math.max(1, Math.round((km / 20) * 60));
+}

@@ -104,6 +104,12 @@
                   {{ formatInt(r.amount) }} ฿
                 </p>
               </div>
+              <p
+                v-if="isTrackable(r)"
+                class="mt-1.5 text-[11px] font-semibold text-violet-700"
+              >
+                🗺️ แตะเพื่อดูเส้นทางจัดส่ง
+              </p>
             </li>
           </ul>
         </div>
@@ -119,6 +125,16 @@
         <p class="mt-1 text-xs text-slate-500">สั่งซื้อจากตะกร้าแล้วจะแสดงที่นี่</p>
       </div>
     </section>
+
+    <DeliveryRoutePreview
+      :open="trackingReceipt != null"
+      :item-name="trackingReceipt?.itemName ?? ''"
+      :house-no="user?.houseNo"
+      :order-id="trackingReceipt?.id"
+      stage="shipping"
+      @close="trackingReceipt = null"
+      @confirm="trackingReceipt = null"
+    />
   </div>
 </template>
 
@@ -138,8 +154,10 @@ type BillFilter = "all" | "action" | "active" | "done";
 
 const router = useRouter();
 const { formatInt } = useFormatNumber();
+const { user } = useAuth();
 const { orderedReceipts, loadReceipts } = useWatershopReceipts();
 const billFilter = ref<BillFilter>("all");
+const trackingReceipt = ref<WatershopReceipt | null>(null);
 
 onMounted(() => {
   loadReceipts();
@@ -261,14 +279,21 @@ const statusClass = (code: BillStatusCode) => {
   return "bg-rose-100 text-rose-800";
 };
 
+const isTrackable = (r: WatershopReceipt) => statusOf(r).code === "shipping";
+
 const rowClass = (r: WatershopReceipt) => {
-  if (!isActionable(r)) return "";
+  if (!isActionable(r) && !isTrackable(r)) return "";
   return "cursor-pointer hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-10px_rgba(15,23,42,0.28)] hover:ring-amber-200 active:scale-[0.99]";
 };
 
 const onRowClick = (r: WatershopReceipt) => {
-  if (!isActionable(r)) return;
-  router.push(`/user/payment?id=${r.id}`);
+  if (isActionable(r)) {
+    router.push(`/user/payment?id=${r.id}`);
+    return;
+  }
+  if (isTrackable(r)) {
+    trackingReceipt.value = r;
+  }
 };
 
 const formatTime = (iso: string) => {

@@ -210,11 +210,22 @@
           <span v-else>ยืนยันการชำระเงิน</span>
         </button>
       </template>
+
+      <DeliveryRoutePreview
+        :open="routePreviewOpen"
+        :item-name="receipt?.itemName ?? ''"
+        :house-no="user?.houseNo"
+        :order-id="receipt?.id"
+        stage="preparing"
+        @close="onRoutePreviewDone"
+        @confirm="onRoutePreviewDone"
+      />
     </div>
 </template>
 
 <script setup lang="ts">
 import {
+  hashSlipImage,
   readFileAsDataUrl,
   slipImagePartsFromDataUrl,
 } from "~/utils/slipImageForOcr";
@@ -235,12 +246,17 @@ const { user } = useAuth();
 const { receipts, loadReceipts, attachSlip, removeSlip, updateStatus, updateSlipVerification } =
   useWatershopReceipts();
 const { runOcr } = useSlipOcr();
-const { alert } = useAlertDialog();
 
 const slipInputRef = ref<HTMLInputElement | null>(null);
 const copied = ref(false);
 const verifying = ref(false);
 const verifyError = ref("");
+const routePreviewOpen = ref(false);
+
+const onRoutePreviewDone = () => {
+  routePreviewOpen.value = false;
+  router.push("/user/bills");
+};
 
 onMounted(() => loadReceipts());
 
@@ -312,7 +328,11 @@ const fetchErrorStatus = (e: unknown): number => {
   return 0;
 };
 
-const sendPaymentNotify = (r: NonNullable<typeof receipt.value>, payerHint?: string | null) =>
+const sendPaymentNotify = (
+  r: NonNullable<typeof receipt.value>,
+  payerHint?: string | null,
+  slipHash?: string | null,
+) =>
   $fetch<{ ok: boolean; duplicate?: boolean }>("/api/notify/payment", {
     method: "POST",
     body: {
@@ -321,6 +341,7 @@ const sendPaymentNotify = (r: NonNullable<typeof receipt.value>, payerHint?: str
       amount: r.amount,
       quantity: r.quantity,
       payerHint,
+      slipHash,
       buyerName: user.value?.name,
       houseNo: user.value?.houseNo,
       lineItems: r.lineItems,
@@ -337,6 +358,7 @@ const verifyAndConfirm = async () => {
   try {
     const parts = await slipImagePartsFromDataUrl(r.slipDataUrl);
     if (!parts) throw new Error("ย่อรูปไม่ได้ — ลองแนบรูปใหม่");
+    const slipHash = await hashSlipImage(r.slipDataUrl);
 
     let ocrResult: Awaited<ReturnType<typeof runOcr>>;
     try {
@@ -350,14 +372,9 @@ const verifyAndConfirm = async () => {
           ocrMessage: "ระบบตรวจสลิปไม่พร้อม — รอแอดมินตรวจ",
           ocrReadAt: new Date().toISOString(),
         });
-        await sendPaymentNotify(r, null).catch(() => {});
+        await sendPaymentNotify(r, null, slipHash).catch(() => {});
         updateStatus(r.id, "paid");
-        await alert({
-          title: "บันทึกการชำระแล้ว",
-          description: `ระบบตรวจสลิปอัตโนมัติไม่พร้อมชั่วคราว — ยอด ${formatInt(r.amount)} ฿ ถูกบันทึกแล้ว แอดมินจะตรวจสลิปให้ภายหลัง`,
-          confirmText: "ดูบิล",
-        });
-        await router.push("/user/bills");
+        routePreviewOpen.value = true;
         return;
       }
       if (status === 429) {
@@ -379,23 +396,18 @@ const verifyAndConfirm = async () => {
       );
     }
 
-    // เช็ค duplicate ก่อน — ถ้าซ้ำให้ block ทันที
-    const notifyRes = await sendPaymentNotify(r, ocrResult.payerHint);
+    // เช็คว่ารูปสลิปนี้เคยถูกใช้ยืนยันไปแล้วหรือยัง (กันเอารูปเดิมมาใช้ซ้ำ) — ไม่เช็คจากยอด+ชื่อผู้โอน
+    // เพราะลูกค้าสั่งยอดเดิมซ้ำได้จริง
+    const notifyRes = await sendPaymentNotify(r, ocrResult.payerHint, slipHash);
 
     if (notifyRes.duplicate) {
       throw new Error(
-        "พบสลิปยอดนี้ในระบบแล้วภายใน 24 ชั่วโมง — ไม่สามารถใช้สลิปซ้ำได้ กรุณาติดต่อแอดมิน",
+        "รูปสลิปนี้ถูกใช้ยืนยันการชำระเงินไปแล้ว — ถ้าเพิ่งโอนซ้ำ กรุณาติดต่อแอดมิน",
       );
     }
 
     updateStatus(r.id, "paid");
-
-    await alert({
-      title: "ชำระเงินสำเร็จ",
-      description: `ยอด ${formatInt(r.amount)} ฿ ตรงกับสลิป — รอการจัดส่ง`,
-      confirmText: "ดูบิล",
-    });
-    await router.push("/user/bills");
+    routePreviewOpen.value = true;
   } catch (err) {
     verifyError.value =
       err instanceof Error ? err.message : "ตรวจสลิปไม่สำเร็จ";

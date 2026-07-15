@@ -73,6 +73,20 @@ export async function slipImagePartsFromDataUrl(
   }
 }
 
+/** แฮชรูปสลิปจริง (SHA-256) ใช้ตรวจสลิปซ้ำแทนการเทียบแค่ยอด+ชื่อผู้โอน ซึ่งชนกันได้เวลาสั่งซ้ำยอดเดิม */
+export async function hashSlipImage(dataUrl: string): Promise<string | null> {
+  if (!import.meta.client) return null;
+  const parsed = parseDataUrlBase64(dataUrl);
+  if (!parsed) return null;
+  try {
+    const bytes = Uint8Array.from(atob(parsed.base64), (c) => c.charCodeAt(0));
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  } catch {
+    return null;
+  }
+}
+
 export function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

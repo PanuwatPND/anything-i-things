@@ -2,6 +2,9 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-01',
   devtools: { enabled: true },
+  devServer: {
+    port: 3009,
+  },
   modules: ['@nuxtjs/tailwindcss', '@vite-pwa/nuxt'],
   runtimeConfig: {
     openaiApiKey: '',
@@ -103,7 +106,8 @@ export default defineNuxtConfig({
       installPrompt: true,
     },
     devOptions: {
-      enabled: true,
+      // ปิด SW ใน dev — ไม่ให้ลงทะเบียนบน localhost แล้วไปรบกวนโปรเจกต์อื่นที่ใช้พอร์ตเดียวกัน
+      enabled: false,
       type: 'module',
     },
   },

@@ -4,22 +4,16 @@ type Body = {
   amount: number;
   quantity?: number;
   payerHint?: string | null;
+  slipHash?: string | null;
   buyerName?: string;
   houseNo?: string;
   lineItems?: LineOrderItem[];
 };
 
-/** in-memory cache — key = "amount:payerKey", value = timestamp ms */
+/** in-memory cache — key = แฮชรูปสลิปจริง (SHA-256), value = timestamp ms
+ * ไม่ใช้ยอด+ชื่อผู้โอนเป็น key เพราะลูกค้าสั่งซ้ำยอดเดิมได้จริง — ต้องเช็คว่า "รูปสลิปเดียวกัน" เท่านั้น */
 const paidCache = new Map<string, number>();
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
-
-function cacheKey(
-  amount: number,
-  payerHint: string | null | undefined,
-): string {
-  const payer = (payerHint ?? "").toLowerCase().replace(/\s+/g, "");
-  return `${Math.round(amount)}:${payer}`;
-}
 
 function isDuplicate(key: string): boolean {
   const ts = paidCache.get(key);
@@ -54,9 +48,10 @@ export default defineEventHandler(async (event) => {
   const b = await readBody<Body>(event);
 
   sweepCache();
-  const key = cacheKey(b.amount, b.payerHint);
-  const duplicate = isDuplicate(key);
-  if (!duplicate) paidCache.set(key, Date.now());
+  // ไม่มีแฮชรูปสลิป (เช่น เบราว์เซอร์เก่า/บล็อก Web Crypto) — ข้ามการเช็คซ้ำ ปล่อยผ่านแทนที่จะเดา
+  const key = b.slipHash?.trim() || null;
+  const duplicate = key ? isDuplicate(key) : false;
+  if (key && !duplicate) paidCache.set(key, Date.now());
 
   const statusText = duplicate
     ? "⚠️ <b>สลิปซ้ำ — ตรวจด้วยมือ</b>"
