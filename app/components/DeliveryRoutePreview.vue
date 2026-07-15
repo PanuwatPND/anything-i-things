@@ -85,8 +85,35 @@
           </div>
 
           <!-- map -->
-          <div class="relative mx-5 h-48 shrink-0 overflow-hidden rounded-2xl ring-1 ring-slate-200/80 sm:h-56">
-            <VillageSatelliteMap :markers="markers" :route="routePoints" :zoom="17" />
+          <div
+            class="relative mx-5 h-52 shrink-0 overflow-hidden rounded-2xl bg-slate-200 shadow-[inset_0_0_0_1px_rgba(15,23,42,0.06)] sm:h-60"
+          >
+            <VillageSatelliteMap
+              compact
+              :markers="markers"
+              :route="routePoints"
+              :zoom="17"
+            />
+            <!-- legend chips -->
+            <div
+              class="pointer-events-none absolute left-3 top-3 flex flex-col gap-1.5"
+            >
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold text-slate-700 shadow-sm backdrop-blur-sm"
+              >
+                <span class="h-2 w-2 rounded-full bg-emerald-500" />
+                ร้าน
+              </span>
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold text-slate-700 shadow-sm backdrop-blur-sm"
+              >
+                <span class="h-2 w-2 rounded-full bg-rose-500" />
+                บ้านคุณ
+              </span>
+            </div>
+            <div
+              class="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/25 to-transparent"
+            />
           </div>
 
           <div class="px-5 pt-3">
@@ -216,18 +243,18 @@ const markers = computed(() => [
   {
     lat: originCoords.value.lat,
     lng: originCoords.value.lng,
-    color: "#10b981",
-    label: "ร้าน",
+    color: "#059669",
+    label: "ร้าน LunarWater",
     confirmed: true,
     shape: "shop" as const,
   },
   {
     lat: destCoords.value.lat,
     lng: destCoords.value.lng,
-    color: "#dc2626",
+    color: "#e11d48",
     label: `บ้านเลขที่ ${props.houseNo ?? ""}`,
     confirmed: destCoords.value.confirmed,
-    shape: "pin" as const,
+    shape: "home" as const,
   },
 ]);
 

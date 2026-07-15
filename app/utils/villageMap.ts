@@ -132,7 +132,7 @@ export type MapMarker = {
   label?: string;
   color?: string;
   confirmed?: boolean;
-  shape?: "pin" | "shop";
+  shape?: "pin" | "shop" | "home";
 };
 
 /**
